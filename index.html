@@ -14,13 +14,12 @@ body{
 .container{display:none;margin-top:40px;}
 .active{display:block;}
 
-input,button{
+input,button,select{
   padding:10px;
   margin:5px;
   border-radius:10px;
   border:none;
 }
-
 button{
   background:#ff69b4;
   color:white;
@@ -37,23 +36,71 @@ button{
 .card{
   display:inline-block;
   margin:10px;
-  transition:0.5s;
+  cursor:pointer;
+  perspective:1000px;
 }
 
-.card:hover{transform:scale(1.1);}
-
-img{
+.card-inner{
   width:120px;
+  height:180px;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.6s;
+}
+
+.card.flip .card-inner{
+  transform:rotateY(180deg);
+}
+
+.card-front, .card-back{
+  position:absolute;
+  width:100%;
+  height:100%;
+  backface-visibility:hidden;
   border-radius:10px;
 }
 
-.flip{
-  animation:flip 0.6s ease;
+.card-front{
+  background:#fff;
+  color:#000;
+  transform:rotateY(180deg);
 }
 
-@keyframes flip{
-from{transform:rotateY(90deg);opacity:0}
-to{transform:rotateY(0);opacity:1}
+.card-back{
+  background:#ff69b4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+
+img{
+  width:100%;
+  border-radius:10px;
+}
+
+/* ✨ hiệu ứng thanh tẩy */
+#purifyEffect{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:9999;
+}
+.sparkle{
+  position:absolute;
+  width:8px;
+  height:8px;
+  background:white;
+  border-radius:50%;
+  animation:fly 2s linear forwards;
+}
+@keyframes fly{
+  0%{transform:scale(0) translateY(0);opacity:1;}
+  100%{transform:scale(1.5) translateY(-200px);opacity:0;}
 }
 </style>
 </head>
@@ -62,9 +109,11 @@ to{transform:rotateY(0);opacity:1}
 
 <button class="logout" onclick="logout()">Đăng xuất</button>
 
+<div id="purifyEffect"></div>
+
 <!-- LOGIN -->
 <div id="login" class="container active">
-<h2>Đăng nhập đii nèee</h2>
+<h2>Đăng nhập</h2>
 <input id="loginUser" placeholder="Tên đăng nhập"><br>
 <input id="loginPass" type="password" placeholder="Mật khẩu"><br>
 <button onclick="login()">Đăng nhập</button>
@@ -75,15 +124,20 @@ to{transform:rotateY(0);opacity:1}
 <div id="register" class="container">
 <h2>Đăng ký</h2>
 <input id="regUser" placeholder="Tên đăng nhập"><br>
+<p>Mật khẩu mặc định: <b>lamthotarot</b></p>
 <button onclick="register()">Tạo tài khoản</button>
 </div>
 
 <!-- MAIN -->
 <div id="main" class="container">
-<h2>Rút bài Tarot đii nèee</h2>
-
+<h2>Rút bài Tarot</h2>
 <input id="nameInput" placeholder="Nhập tên (bắt buộc)"><br>
 <input id="birth" type="date"><br>
+
+<select id="mode">
+<option value="3">Rút 3 lá</option>
+<option value="5" selected>Rút 5 lá</option>
+</select><br>
 
 <button onclick="startDraw()">Rútt bài</button>
 <button onclick="showHistory()">Lịch sử xem</button>
@@ -91,12 +145,9 @@ to{transform:rotateY(0);opacity:1}
 
 <!-- FOCUS -->
 <div id="focus" class="container">
-<h2>Tập trung nghĩ về câu muốn hỏi đii ng dpp</h2>
+<h2>Tập trung nghĩ về câu hỏi đii ng dpp</h2>
 <h1 id="count">7</h1>
-
-<button id="skipBtn" onclick="skip()">tua luônnn</button>
-
-<!-- 🔥 nút rút bài (ẩn ban đầu) -->
+<button onclick="skip()">oki tiếp</button>
 <div id="drawNow" style="display:none;">
 <button onclick="drawCards()">Rút bài ngayy</button>
 </div>
@@ -104,207 +155,213 @@ to{transform:rotateY(0);opacity:1}
 
 <!-- RESULT -->
 <div id="result" class="container">
-<h2>Kết quả (5 lá)</h2>
+<h2 id="resultTitle"></h2>
 <div id="cards"></div>
 <p id="message"></p>
-<button onclick="show('main')">Trang chủ</button>
+
+
+<button style="margin-top:70px;" onclick="show('main')">Trang chủ</button>
 </div>
 
 <!-- HISTORY -->
 <div id="history" class="container">
 <h2>Lịch sử</h2>
 <div id="historyList"></div>
+<button onclick="deleteSelected()">🗑 Xóa đã chọn</button>
+<button onclick="deleteAllHistory()">💥 Xóa toàn bộ</button>
 <button onclick="show('main')">Quay lạiii</button>
 </div>
 
 <script>
+  function deleteAllHistory(){
+if(!confirm("Xóa hết lịch sử luôn hả? 😢")) return;
 
+histories[currentUser] = [];
+localStorage.setItem("histories", JSON.stringify(histories));
+showHistory();
+}
 let users = JSON.parse(localStorage.getItem("users")) || {};
 let histories = JSON.parse(localStorage.getItem("histories")) || {};
 let currentUser = "";
 let timer;
 
-// ===== 78 LÁ =====
 let tarot = [
 {name:"The Fool",img:"m04.jpg"},
 {name:"The Magician",img:"m01.jpg"},
-{name:"The High Priestess",img:"m02.jpg"},
-{name:"The Empress",img:"m03.jpg"},
-{name:"The Emperor",img:"m04 (1).jpg"},
-{name:"The Hierophant",img:"m05.jpg"},
-{name:"The Lovers",img:"m06.jpg"},
-{name:"The Chariot",img:"m07.jpg"},
-{name:"Strength",img:"m08.jpg"},
-{name:"The Hermit",img:"m09.jpg"},
-{name:"Wheel of Fortune",img:"m10.jpg"},
-{name:"Justice",img:"m11.jpg"},
-{name:"The Hanged Man",img:"m12.jpg"},
-{name:"Death",img:"m13.jpg"},
-{name:"Temperance",img:"m14.jpg"},
-{name:"The Devil",img:"m15.jpg"},
-{name:"The Tower",img:"m16.jpg"},
-{name:"The Star",img:"m17.jpg"},
-{name:"The Moon",img:"m18.jpg"},
-{name:"The Sun",img:"m19.jpg"},
-{name:"Judgement",img:"m20.jpg"},
-{name:"The World",img:"m21.jpg"},
 ];
 
-const suits = [
-{name:"Cups"},
-{name:"Pentacles"},
-{name:"Swords"},
-{name:"Wands"}
-];
-
+const suits = ["Cups","Pentacles","Swords","Wands"];
 const ranks = ["Ace","2","3","4","5","6","7","8","9","10","Page","Knight","Queen","King"];
 
-suits.forEach(suit=>{
-ranks.forEach(rank=>{
-tarot.push({
-name: rank + " of " + suit.name,
-img: "anphuu.PNG"
-});
+suits.forEach(s=>{
+ranks.forEach(r=>{
+tarot.push({name:`${r} of ${s}`,img:"anphuu.PNG"});
 });
 });
 
-// ===== UI =====
 function show(id){
 document.querySelectorAll('.container').forEach(e=>e.classList.remove('active'));
 document.getElementById(id).classList.add('active');
 }
 
-// ===== REGISTER =====
 function register(){
 let u = regUser.value.trim();
-
-if(!u){alert("Nhập tên đii ng dpp");return;}
-
-if(users[u]){
-alert("Tài khoản đã tồn tại → đăng nhập đi ng dpp");
-show('login');
-return;
-}
-
-users[u] = "lamthotarot";
-localStorage.setItem("users", JSON.stringify(users));
-
-alert("Đăng ký thành công ròiiii");
+if(!u)return alert("Nhập tên đii");
+if(users[u]) return alert("Đã tồn tại"),show('login');
+users[u]="lamthotarot";
+localStorage.setItem("users",JSON.stringify(users));
+alert("okiii");
 show('login');
 }
 
-// ===== LOGIN =====
 function login(){
-let u = loginUser.value.trim();
-let p = loginPass.value;
-
+let u=loginUser.value.trim();
+let p=loginPass.value;
 if(users[u] && p==="lamthotarot"){
-currentUser = u;
+currentUser=u;
 show('main');
-}else{
-alert("Sai tài khoản hoặc mật khẩu ròiii");
-}
+}else alert("Sai ròiii");
 }
 
-// ===== LOGOUT =====
 function logout(){
 currentUser="";
 show('login');
 }
 
-// ===== START =====
 function startDraw(){
-let name = nameInput.value.trim();
-
-if(!name){
-alert("Nhập tên mới được rút nha ng dpp");
-return;
-}
-
+if(!nameInput.value.trim()) return alert("Nhập tên");
 show('focus');
-
-// reset UI
 drawNow.style.display="none";
-
 let c=7;
 count.innerText=c;
-
 clearInterval(timer);
-
-timer = setInterval(()=>{
+timer=setInterval(()=>{
 c--;
 count.innerText=c;
-
 if(c<=0){
 clearInterval(timer);
-
-// 🔥 hiện nút rút bài
 drawNow.style.display="block";
 }
 },1000);
 }
 
-// ===== SKIP =====
 function skip(){
 clearInterval(timer);
-
-// 🔥 hiện nút rút bài
 drawNow.style.display="block";
 }
 
-// ===== DRAW 5 LÁ =====
 function drawCards(){
 show('result');
-
+let num = parseInt(mode.value);
+resultTitle.innerText = `Kết quả (${num} lá)`;
 let shuffled=[...tarot].sort(()=>0.5-Math.random());
-let selected=shuffled.slice(0,5);
+let selected=shuffled.slice(0,num);
 
 let html="";
-
 selected.forEach(card=>{
 html+=`
-<div class="card flip">
+<div class="card" onclick="this.classList.toggle('flip')">
+<div class="card-inner">
+<div class="card-back">Tarot</div>
+<div class="card-front">
 <img src="${card.img}">
 <p>${card.name}</p>
 </div>
+</div>
+</div>
 `;
 });
-
 cards.innerHTML=html;
-message.innerText="chúc người dp chơi vui vẻ và luôn bình an nhaaa";
 
-// SAVE HISTORY
 if(!histories[currentUser]) histories[currentUser]=[];
-
 histories[currentUser].push({
 time:new Date().toLocaleString(),
 cards:selected.map(c=>c.name)
 });
-
-localStorage.setItem("histories", JSON.stringify(histories));
+localStorage.setItem("histories",JSON.stringify(histories));
 }
 
-// ===== HISTORY =====
 function showHistory(){
 show('history');
-
-let list = histories[currentUser] || [];
+let list=histories[currentUser]||[];
 let html="";
-
-if(list.length===0){
-html="Chưa có lịch sử xem ạaaa";
-}else{
-list.slice().reverse().forEach(item=>{
+list.forEach((i,index)=>{
 html+=`
-<p><b>${item.time}</b><br>${item.cards.join(", ")}</p><hr>
+<p>
+<input type="checkbox" class="hisCheck" value="${index}">
+<b>${i.time}</b><br>${i.cards.join(", ")}
+</p><hr>
 `;
 });
+historyList.innerHTML=html || "Chưa có lịch sử";
 }
 
-historyList.innerHTML=html;
+function deleteSelected(){
+let checks=document.querySelectorAll(".hisCheck:checked");
+let list=histories[currentUser]||[];
+
+checks.forEach(c=>{
+list[c.value]=null;
+});
+
+histories[currentUser]=list.filter(x=>x!==null);
+localStorage.setItem("histories",JSON.stringify(histories));
+showHistory();
 }
+
+// 🎵 NHẠC
+let music = new Audio("nhac.mp3");
+music.loop = true;
+
+function toggleMusic(){
+if(music.paused){
+music.play();
+alert("🎵 mở nhạc rùi nhaa");
+}else{
+music.pause();
+alert("🔇 tắt nhạc rùi");
+}
+}
+
+// ✨ THANH TẨY
+function purify(){
+if(!currentUser){
+alert("Đăng nhập mới thanh tẩy đc nhaaa");
+return;
+}
+
+let container = document.getElementById("purifyEffect");
+
+for(let i=0;i<50;i++){
+let s=document.createElement("div");
+s.className="sparkle";
+s.style.left=Math.random()*100+"%";
+s.style.top=Math.random()*100+"%";
+container.appendChild(s);
+
+setTimeout(()=>s.remove(),2000);
+}
+
+alert("✨ Thanh tẩy năng lượng xong rùi 🔮");
+}
+
+// BUTTONS
+let btn = document.createElement("button");
+btn.innerText="🎵 Nhạc chill";
+btn.style.position="fixed";
+btn.style.bottom="10px";
+btn.style.right="10px";
+btn.onclick=toggleMusic;
+document.body.appendChild(btn);
+
+let btn2 = document.createElement("button");
+btn2.innerText="🌙 Thanh tẩy";
+btn2.style.position="fixed";
+btn2.style.bottom="50px";
+btn2.style.right="10px";
+btn2.onclick=purify;
+document.body.appendChild(btn2);
 
 </script>
-
 </body>
 </html>
