@@ -124,6 +124,7 @@ img{
 <div id="register" class="container">
 <h2>Đăng ký</h2>
 <input id="regUser" placeholder="Tên đăng nhập"><br>
+
 <button onclick="register()">Tạo tài khoản</button>
 </div>
 
@@ -184,9 +185,30 @@ let histories = JSON.parse(localStorage.getItem("histories")) || {};
 let currentUser = "";
 let timer;
 
+
 let tarot = [
-{name:"The Fool",img:"m04.jpg"},
+{name:"The Fool",img:"m00.jpg"},
 {name:"The Magician",img:"m01.jpg"},
+{name:"The High Priestess",img:"m02.jpg"},
+{name:"The Empress",img:"m03.jpg"},
+{name:"The Emperor",img:"m04.jpg"},
+{name:"The Hierophant",img:"m05.jpg"},
+{name:"The Lovers",img:"m06.jpg"},
+{name:"The Chariot",img:"m07.jpg"},
+{name:"Strength",img:"m08.jpg"},
+{name:"The Hermit",img:"m09.jpg"},
+{name:"Wheel of Fortune",img:"m10.jpg"},
+{name:"Justice",img:"m11.jpg"},
+{name:"The Hanged Man",img:"m12.jpg"},
+{name:"Death",img:"m13.jpg"},
+{name:"Temperance",img:"m14.jpg"},
+{name:"The Devil",img:"m15.jpg"},
+{name:"The Tower",img:"m16.jpg"},
+{name:"The Star",img:"m17.jpg"},
+{name:"The Moon",img:"m18.jpg"},
+{name:"The Sun",img:"m19.jpg"},
+{name:"Judgement",img:"m20.jpg"},
+{name:"The World",img:"m21.jpg"},
 ];
 
 const suits = ["Cups","Pentacles","Swords","Wands"];
