@@ -113,7 +113,7 @@ img{
 
 <!-- LOGIN -->
 <div id="login" class="container active">
-<h2>Đăng nhập</h2>
+<h2>Đăng nhập đi ng dpp</h2>
 <input id="loginUser" placeholder="Tên đăng nhậpp"><br>
 <input id="loginPass" type="password" placeholder="Mật khẩuu"><br>
 <button onclick="login()">Đăng nhậpp</button>
@@ -122,7 +122,7 @@ img{
 
 <!-- REGISTER -->
 <div id="register" class="container">
-<h2>Đăngg ký</h2>
+<h2>Đăngg ký đi ng dpp</h2>
 <input id="regUser" placeholder="Tên đăng nhậpp"><br>
 
 <button onclick="register()">Tạo tài khoảnn</button>
@@ -228,7 +228,7 @@ document.getElementById(id).classList.add('active');
 function register(){
 let u = regUser.value.trim();
 if(!u)return alert("Nhập tên đii");
-if(users[u]) return alert("Đã tồn tại"),show('login');
+if(users[u]) return alert("Tài khoản đã tồn tại ròiii"),show('login');
 users[u]="lamthotarot";
 localStorage.setItem("users",JSON.stringify(users));
 alert("okiii");
@@ -241,7 +241,7 @@ let p=loginPass.value;
 if(users[u] && p==="lamthotarot"){
 currentUser=u;
 show('main');
-}else alert("Sai ròiii");
+}else alert("Sai mật khẩu hoặc tài khoản ròiii");
 }
 
 function logout(){
@@ -250,7 +250,7 @@ show('login');
 }
 
 function startDraw(){
-if(!nameInput.value.trim()) return alert("Nhập tên");
+if(!nameInput.value.trim()) return alert("Nhập tên đii ng dpp");
 show('focus');
 drawNow.style.display="none";
 let c=7;
@@ -283,7 +283,7 @@ selected.forEach(card=>{
 html+=`
 <div class="card" onclick="this.classList.toggle('flip')">
 <div class="card-inner">
-<div class="card-back">Tarot</div>
+<div class="card-back">Tarot ytho</div>
 <div class="card-front">
 <img src="${card.img}">
 <p>${card.name}</p>
@@ -382,6 +382,9 @@ btn2.style.bottom="50px";
 btn2.style.right="10px";
 btn2.onclick=purify;
 document.body.appendChild(btn2);
+
+
+</script>
 
 </script>
 </body>
