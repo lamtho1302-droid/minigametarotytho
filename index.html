@@ -133,7 +133,7 @@ img{
 <h2>Rút bài Tarot xíu đi nèe</h2>
 <input id="nameInput" placeholder="Nhập tên đi ng dpp"><br>
 <input id="birth" type="date"><br>
-
+<button onclick="saveProfile()">Lưu thông tin nhaa</button>
 <select id="mode">
 <option value="3">Rút 3 láaa</option>
 <option value="5" selected>Rút 5 láaa</option>
@@ -182,6 +182,7 @@ showHistory();
 }
 let users = JSON.parse(localStorage.getItem("users")) || {};
 let histories = JSON.parse(localStorage.getItem("histories")) || {};
+let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
 let currentUser = "";
 let timer;
 
@@ -231,18 +232,36 @@ if(!u)return alert("Nhập tên đii");
 if(users[u]) return alert("Tài khoản đã tồn tại ròiii"),show('login');
 users[u]="lamthotarot";
 localStorage.setItem("users",JSON.stringify(users));
-alert("okiii");
+alert("tạo tài khoản thành côngggg ");
 show('login');
 }
 
 function login(){
 let u=loginUser.value.trim();
 let p=loginPass.value;
+
+if(users[u] && p==="lamthotarot"){
+currentUser=u;
+
+// 👉 load info đã lưu
+if(profiles[currentUser]){
+nameInput.value = profiles[currentUser].name || "";
+birth.value = profiles[currentUser].birth || "";
+}else{
+nameInput.value = "";
+birth.value = "";
+}
+
+show('main');
+}else alert("Sai mật khẩu hoặc tài khoản ròiii");
+}
+let u=loginUser.value.trim();
+let p=loginPass.value;
 if(users[u] && p==="lamthotarot"){
 currentUser=u;
 show('main');
 }else alert("Sai mật khẩu hoặc tài khoản ròiii");
-}
+
 
 function logout(){
 currentUser="";
@@ -272,6 +291,12 @@ drawNow.style.display="block";
 }
 
 function drawCards(){
+  // 👉 lưu thông tin user
+profiles[currentUser] = {
+name: nameInput.value,
+birth: birth.value
+};
+localStorage.setItem("profiles", JSON.stringify(profiles));
 show('result');
 let num = parseInt(mode.value);
 resultTitle.innerText = `Kết quả (${num} lá)`;
@@ -383,6 +408,20 @@ btn2.style.right="10px";
 btn2.onclick=purify;
 document.body.appendChild(btn2);
 
+function saveProfile(){
+if(!currentUser){
+alert("Đăng nhập đi ng dpp");
+return;
+}
+
+profiles[currentUser] = {
+name: nameInput.value,
+birth: birth.value
+};
+
+localStorage.setItem("profiles", JSON.stringify(profiles));
+alert("Lưu thông tin thành công rùi nhaa 💖");
+}
 
 </script>
 
