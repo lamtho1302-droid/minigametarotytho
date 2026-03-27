@@ -135,7 +135,7 @@ th, td {
 <div id="register" class="container">
 <h2>Đăngg ký đi ng dpp</h2>
 <input id="regUser" placeholder="Tên đăng nhậpp"><br>
-
+<input id="regPass" type="password" placeholder="Mật khẩu của ng dp"><br>
 <button onclick="register()">Tạo tài khoảnn</button>
 <button onclick="show('login')">Quay lại đăng nhập</button>
 </div>
@@ -267,17 +267,20 @@ if(id === 'main') {
 
 function register(){
 let u = regUser.value.trim();
-if(!u)return alert("Nhập tên đii");
-if(u === "ytho1302") return alert("Tên này không được đăng ký!");
+let p = regPass.value.trim();
+
+if(!u) return alert("Nhập tên đăng nhập đii");
+if(!p) return alert("Nhập mật khẩu đii ng dpp");
+if(u === "ytho1302") return alert("Tên này dành riêng cho Admin!");
 if(users[u]) return alert("Tài khoản đã tồn tại ròiii");
 
-users[u]="lamthotarot";
+users[u] = p; // Lưu mật khẩu thực tế
 userStats[u] = { approved: false, draws3: 0, draws5: 0 }; 
 
 localStorage.setItem("users",JSON.stringify(users));
 localStorage.setItem("userStats",JSON.stringify(userStats));
 
-alert("tạo tài khoản thành côngggg ");
+alert("Tạo tài khoản thành công rùi nhaaa! Nhớ mật khẩu đó.");
 show('login');
 }
 
@@ -285,13 +288,15 @@ function login(){
 let u=loginUser.value.trim();
 let p=loginPass.value;
 
+// TÀI KHOẢN ADMIN
 if(u === "ytho1302" && p === "217465adminytho"){
     currentUser = "admin";
     showAdmin();
     return;
 }
 
-if(users[u] && p==="lamthotarot"){
+// Check mật khẩu người dùng đã lưu
+if(users[u] && p === users[u]){
     currentUser=u;
     if(profiles[currentUser]){
         nameInput.value = profiles[currentUser].name || "";
@@ -302,7 +307,7 @@ if(users[u] && p==="lamthotarot"){
     }
     show('main');
 }else {
-    alert("Sai mật khẩu hoặc tài khoản ròiii");
+    alert("Sai mật khẩu hoặc tài khoản ròiii ng dp");
 }
 }
 
@@ -323,13 +328,14 @@ function renderAdminUserList() {
     let count = Object.keys(users).length;
     document.getElementById('totalUsersCount').innerText = count;
 
-    let html = "<table><tr><th>Tài khoản</th><th>Trạng thái</th><th>Lượt 3 lá</th><th>Lượt 5 lá</th><th>Hành động</th></tr>";
+    let html = "<table><tr><th>Tài khoản</th><th>Mật khẩu</th><th>Trạng thái</th><th>Lượt 3</th><th>Lượt 5</th><th>Hành động</th></tr>";
     for(let u in users) {
         let stats = userStats[u];
         let statusTxt = stats.approved ? "<span style='color:lightgreen'>Đã duyệt</span>" : "<span style='color:yellow'>Chưa duyệt</span>";
         
         html += `<tr>
             <td>${u}</td>
+            <td style="color: #00ffff; font-weight: bold;">${users[u]}</td>
             <td>${statusTxt}</td>
             <td><b>${stats.draws3}</b></td>
             <td><b>${stats.draws5}</b></td>
@@ -337,14 +343,14 @@ function renderAdminUserList() {
                 ${!stats.approved ? `<button onclick="toggleApprove('${u}', true)" style="background:green;padding:5px;margin-bottom:5px;width:100%;">Duyệt</button>` : `<button onclick="toggleApprove('${u}', false)" style="background:orange;padding:5px;margin-bottom:5px;width:100%;">Hủy Duyệt</button>`}<br>
                 
                 <input type="number" id="draw3_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
-                <button onclick="addDraws('${u}', 3)" style="background:blue;padding:5px;margin-bottom:5px;">+ Lượt 3</button>
-                <button onclick="subDraws('${u}', 3)" style="background:darkblue;padding:5px;margin-bottom:5px;">- Lượt 3</button><br>
+                <button onclick="addDraws('${u}', 3)" style="background:blue;padding:5px;margin-bottom:5px;">+</button>
+                <button onclick="subDraws('${u}', 3)" style="background:darkblue;padding:5px;margin-bottom:5px;">-</button><br>
                 
                 <input type="number" id="draw5_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
-                <button onclick="addDraws('${u}', 5)" style="background:purple;padding:5px;margin-bottom:5px;">+ Lượt 5</button>
-                <button onclick="subDraws('${u}', 5)" style="background:indigo;padding:5px;margin-bottom:5px;">- Lượt 5</button><br>
+                <button onclick="addDraws('${u}', 5)" style="background:purple;padding:5px;margin-bottom:5px;">+</button>
+                <button onclick="subDraws('${u}', 5)" style="background:indigo;padding:5px;margin-bottom:5px;">-</button><br>
                 
-                <button onclick="deleteUser('${u}')" style="background:red;padding:5px;width:100%;">Xóa User</button>
+                <button onclick="deleteUser('${u}')" style="background:red;padding:5px;width:100%;">Xóa</button>
             </td>
         </tr>`;
     }
@@ -360,31 +366,24 @@ function toggleApprove(u, status) {
 
 function addDraws(u, type) {
     let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
-    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ đi ytho ơi!");
+    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ!");
     
     if(type === 3) userStats[u].draws3 += val;
     if(type === 5) userStats[u].draws5 += val;
     
     localStorage.setItem("userStats", JSON.stringify(userStats));
     renderAdminUserList();
-    alert(`Đã cộng ${val} lượt rút ${type} lá cho tài khoản ${u}!`);
 }
 
-// ✨ TÍNH NĂNG MỚI: TRỪ LƯỢT
 function subDraws(u, type) {
     let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
-    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ đi ytho ơi!");
+    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ!");
     
-    if(type === 3) {
-        userStats[u].draws3 = Math.max(0, userStats[u].draws3 - val); // Không để lượt âm
-    }
-    if(type === 5) {
-        userStats[u].draws5 = Math.max(0, userStats[u].draws5 - val);
-    }
+    if(type === 3) userStats[u].draws3 = Math.max(0, userStats[u].draws3 - val);
+    if(type === 5) userStats[u].draws5 = Math.max(0, userStats[u].draws5 - val);
     
     localStorage.setItem("userStats", JSON.stringify(userStats));
     renderAdminUserList();
-    alert(`Đã trừ ${val} lượt rút ${type} lá của tài khoản ${u}!`);
 }
 
 function deleteUser(u) {
@@ -404,7 +403,6 @@ function deleteUser(u) {
 }
 // ================= KẾT THÚC ADMIN =================
 
-
 function updateDrawsInfo() {
     if(currentUser && currentUser !== "admin") {
         let stats = userStats[currentUser];
@@ -413,7 +411,7 @@ function updateDrawsInfo() {
             info.innerText = "Tài khoản chưa được ytho duyệt. Không thể rút bài!";
             info.style.color = "red";
         } else {
-            info.innerHTML = `Lượt rút 3 lá: <span style="color:#fff">${stats.draws3}</span> | Lượt rút 5 lá: <span style="color:#fff">${stats.draws5}</span>`;
+            info.innerHTML = `Lượt 3 lá: <span style="color:#fff">${stats.draws3}</span> | Lượt 5 lá: <span style="color:#fff">${stats.draws5}</span>`;
             info.style.color = "yellow";
         }
     }
@@ -426,14 +424,14 @@ let num = parseInt(mode.value);
 let stats = userStats[currentUser];
 
 if(!stats.approved) {
-    return alert("Tài khoản của ng dp chưa được ytho duyệt để rút bài nha!");
+    return alert("Tài khoản của bạn chưa được ytho duyệt!");
 }
 
 if(num === 3) {
-    if(stats.draws3 <= 0) return alert("ng dp đã hết lượt rút 3 lá ròi! Hãy mua thêm lượt từ ytho nha.");
+    if(stats.draws3 <= 0) return alert("ng dp đã hết lượt rút 3 lá ròi hãy mua thêm lượt từ ytho nhaaa!");
     stats.draws3 -= 1;
 } else if (num === 5) {
-    if(stats.draws5 <= 0) return alert("ng dp đã hết lượt rút 5 lá ròi! Hãy mua thêm lượt từ ytho nha.");
+    if(stats.draws5 <= 0) return alert("ng dp đã hết lượt rút 5 lá ròi hãy mua thêm lượt từ ytho nhaaa!");
     stats.draws5 -= 1;
 }
 
@@ -514,11 +512,7 @@ historyList.innerHTML=html || "Chưa có lịch sử xemm";
 function deleteSelected(){
 let checks=document.querySelectorAll(".hisCheck:checked");
 let list=histories[currentUser]||[];
-
-checks.forEach(c=>{
-list[c.value]=null;
-});
-
+checks.forEach(c=>{ list[c.value]=null; });
 histories[currentUser]=list.filter(x=>x!==null);
 localStorage.setItem("histories",JSON.stringify(histories));
 showHistory();
@@ -526,67 +520,42 @@ showHistory();
 
 let music = new Audio("nhac.mp3");
 music.loop = true;
-
 function toggleMusic(){
-if(music.paused){
-music.play();
-alert("🎵 mở nhạc ròiii nhaa");
-}else{
-music.pause();
-alert("🔇 tắt nhạc ròii");
-}
+if(music.paused){ music.play(); alert("🎵 mở nhạc ròiii"); }
+else{ music.pause(); alert("🔇 tắt nhạc ròii"); }
 }
 
 function purify(){
-if(!currentUser){
-alert("Đăng nhập mới thanh tẩy đc nhaaa");
-return;
-}
-
+if(!currentUser) return alert("Đăng nhập mới thanh tẩy đc nhaaa");
 let container = document.getElementById("purifyEffect");
-
 for(let i=0;i<50;i++){
 let s=document.createElement("div");
 s.className="sparkle";
 s.style.left=Math.random()*100+"%";
 s.style.top=Math.random()*100+"%";
 container.appendChild(s);
-
 setTimeout(()=>s.remove(),2000);
 }
-
-alert("✨ Thanh tẩy năng lượng xong ròi 🔮");
+alert("✨ Thanh tẩy xong rùi 🔮");
 }
 
 let btn = document.createElement("button");
 btn.innerText="🎵 Nhạc chill";
-btn.style.position="fixed";
-btn.style.bottom="10px";
-btn.style.right="10px";
+btn.style.position="fixed"; btn.style.bottom="10px"; btn.style.right="10px";
 btn.onclick=toggleMusic;
 document.body.appendChild(btn);
 
 let btn2 = document.createElement("button");
 btn2.innerText="🌙 Thanh tẩy";
-btn2.style.position="fixed";
-btn2.style.bottom="50px";
-btn2.style.right="10px";
+btn2.style.position="fixed"; btn2.style.bottom="50px"; btn2.style.right="10px";
 btn2.onclick=purify;
 document.body.appendChild(btn2);
 
 function saveProfile(){
-if(!currentUser){
-alert("Đăng nhập đi ng dpp");
-return;
-}
-
-profiles[currentUser] = {
-name: nameInput.value,
-birth: birth.value
-};
-
+if(!currentUser) return alert("Đăng nhập đi ng dpp");
+profiles[currentUser] = { name: nameInput.value, birth: birth.value };
 localStorage.setItem("profiles", JSON.stringify(profiles));
-alert("Lưu thông tin thành công ròiii ạa 💖");
+alert("Lưu thông tin thành công ròi ạaa 💖");
 }
 
 </script>
