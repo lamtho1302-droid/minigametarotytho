@@ -102,16 +102,28 @@ img{
   0%{transform:scale(0) translateY(0);opacity:1;}
   100%{transform:scale(1.5) translateY(-200px);opacity:0;}
 }
+
+/* Style cho bảng admin */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
+th, td {
+  padding: 10px;
+  border: 1px solid #fff;
+}
 </style>
 </head>
 
 <body>
 
-<button class="logout" onclick="logout()">Đăng xuấtttt</button>
+<button id="logoutBtn" class="logout" style="display:none;" onclick="logout()">Đăng xuấtttt</button>
 
 <div id="purifyEffect"></div>
 
-<!-- LOGIN -->
 <div id="login" class="container active">
 <h2>Đăng nhập đi ng dpp</h2>
 <input id="loginUser" placeholder="Tên đăng nhậpp"><br>
@@ -120,17 +132,23 @@ img{
 <button onclick="show('register')">Đăngg ký</button>
 </div>
 
-<!-- REGISTER -->
 <div id="register" class="container">
 <h2>Đăngg ký đi ng dpp</h2>
 <input id="regUser" placeholder="Tên đăng nhậpp"><br>
 
 <button onclick="register()">Tạo tài khoảnn</button>
+<button onclick="show('login')">Quay lại đăng nhập</button>
 </div>
 
-<!-- MAIN -->
+<div id="adminPanel" class="container">
+<h2>Trang Quản Trị Admin</h2>
+<p>Tổng số tài khoản đã tạo: <b id="totalUsersCount">0</b></p>
+<div id="adminUserList" style="overflow-x:auto;"></div>
+</div>
+
 <div id="main" class="container">
 <h2>Rút bài Tarot xíu đi nèe</h2>
+<p id="drawsInfo" style="color: yellow; font-weight: bold;"></p>
 <input id="nameInput" placeholder="Nhập tên đi ng dpp"><br>
 <input id="birth" type="date"><br>
 <button onclick="saveProfile()">Lưu thông tin nhaa</button>
@@ -143,7 +161,6 @@ img{
 <button onclick="showHistory()">Lịch sử xem Tarot</button>
 </div>
 
-<!-- FOCUS -->
 <div id="focus" class="container">
 <h2>Tập trung nghĩ về câu hỏi đii ng dpp</h2>
 <h1 id="count">7</h1>
@@ -153,7 +170,6 @@ img{
 </div>
 </div>
 
-<!-- RESULT -->
 <div id="result" class="container">
 <h2 id="resultTitle"></h2>
 <div id="cards"></div>
@@ -163,7 +179,6 @@ img{
 <button style="margin-top:70px;" onclick="show('main')">Trangg chủ</button>
 </div>
 
-<!-- HISTORY -->
 <div id="history" class="container">
 <h2>Lịch sử xem tarot</h2>
 <div id="historyList"></div>
@@ -173,18 +188,32 @@ img{
 </div>
 
 <script>
-  function deleteAllHistory(){
-if(!confirm("Xóa hết lịch sử luôn hả? 😢")) return;
-
-histories[currentUser] = [];
-localStorage.setItem("histories", JSON.stringify(histories));
-showHistory();
+function deleteAllHistory(){
+  if(!confirm("Xóa hết lịch sử luôn hả? 😢")) return;
+  histories[currentUser] = [];
+  localStorage.setItem("histories", JSON.stringify(histories));
+  showHistory();
 }
+
 let users = JSON.parse(localStorage.getItem("users")) || {};
 let histories = JSON.parse(localStorage.getItem("histories")) || {};
 let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
+let userStats = JSON.parse(localStorage.getItem("userStats")) || {}; 
 let currentUser = "";
 let timer;
+
+for(let u in users) {
+    if(!userStats[u]) {
+        userStats[u] = { approved: false, draws3: 0, draws5: 0 };
+    } else {
+        if(userStats[u].draws3 === undefined) userStats[u].draws3 = 0;
+        if(userStats[u].draws5 === undefined) {
+            userStats[u].draws5 = userStats[u].drawsLeft || 0; 
+            delete userStats[u].drawsLeft;
+        }
+    }
+}
+localStorage.setItem("userStats", JSON.stringify(userStats));
 
 
 let tarot = [
@@ -224,14 +253,30 @@ tarot.push({name:`${r} of ${s}`,img:"anphuu.PNG"});
 function show(id){
 document.querySelectorAll('.container').forEach(e=>e.classList.remove('active'));
 document.getElementById(id).classList.add('active');
+
+if(id !== 'login' && id !== 'register') {
+    document.getElementById('logoutBtn').style.display = 'block';
+} else {
+    document.getElementById('logoutBtn').style.display = 'none';
+}
+
+if(id === 'main') {
+    updateDrawsInfo();
+}
 }
 
 function register(){
 let u = regUser.value.trim();
 if(!u)return alert("Nhập tên đii");
-if(users[u]) return alert("Tài khoản đã tồn tại ròiii"),show('login');
+if(u === "ytho1302") return alert("Tên này không được đăng ký!");
+if(users[u]) return alert("Tài khoản đã tồn tại ròiii");
+
 users[u]="lamthotarot";
+userStats[u] = { approved: false, draws3: 0, draws5: 0 }; 
+
 localStorage.setItem("users",JSON.stringify(users));
+localStorage.setItem("userStats",JSON.stringify(userStats));
+
 alert("tạo tài khoản thành côngggg ");
 show('login');
 }
@@ -240,36 +285,161 @@ function login(){
 let u=loginUser.value.trim();
 let p=loginPass.value;
 
-if(users[u] && p==="lamthotarot"){
-currentUser=u;
-
-// 👉 load info đã lưu
-if(profiles[currentUser]){
-nameInput.value = profiles[currentUser].name || "";
-birth.value = profiles[currentUser].birth || "";
-}else{
-nameInput.value = "";
-birth.value = "";
+if(u === "ytho1302" && p === "217465adminytho"){
+    currentUser = "admin";
+    showAdmin();
+    return;
 }
 
-show('main');
-}else alert("Sai mật khẩu hoặc tài khoản ròiii");
-}
-let u=loginUser.value.trim();
-let p=loginPass.value;
 if(users[u] && p==="lamthotarot"){
-currentUser=u;
-show('main');
-}else alert("Sai mật khẩu hoặc tài khoản ròiii");
-
+    currentUser=u;
+    if(profiles[currentUser]){
+        nameInput.value = profiles[currentUser].name || "";
+        birth.value = profiles[currentUser].birth || "";
+    }else{
+        nameInput.value = "";
+        birth.value = "";
+    }
+    show('main');
+}else {
+    alert("Sai mật khẩu hoặc tài khoản ròiii");
+}
+}
 
 function logout(){
 currentUser="";
+loginUser.value = "";
+loginPass.value = "";
 show('login');
+}
+
+// ================= PHẦN ADMIN =================
+function showAdmin(){
+    show('adminPanel');
+    renderAdminUserList();
+}
+
+function renderAdminUserList() {
+    let count = Object.keys(users).length;
+    document.getElementById('totalUsersCount').innerText = count;
+
+    let html = "<table><tr><th>Tài khoản</th><th>Trạng thái</th><th>Lượt 3 lá</th><th>Lượt 5 lá</th><th>Hành động</th></tr>";
+    for(let u in users) {
+        let stats = userStats[u];
+        let statusTxt = stats.approved ? "<span style='color:lightgreen'>Đã duyệt</span>" : "<span style='color:yellow'>Chưa duyệt</span>";
+        
+        html += `<tr>
+            <td>${u}</td>
+            <td>${statusTxt}</td>
+            <td><b>${stats.draws3}</b></td>
+            <td><b>${stats.draws5}</b></td>
+            <td style="text-align:left;">
+                ${!stats.approved ? `<button onclick="toggleApprove('${u}', true)" style="background:green;padding:5px;margin-bottom:5px;width:100%;">Duyệt</button>` : `<button onclick="toggleApprove('${u}', false)" style="background:orange;padding:5px;margin-bottom:5px;width:100%;">Hủy Duyệt</button>`}<br>
+                
+                <input type="number" id="draw3_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
+                <button onclick="addDraws('${u}', 3)" style="background:blue;padding:5px;margin-bottom:5px;">+ Lượt 3</button>
+                <button onclick="subDraws('${u}', 3)" style="background:darkblue;padding:5px;margin-bottom:5px;">- Lượt 3</button><br>
+                
+                <input type="number" id="draw5_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
+                <button onclick="addDraws('${u}', 5)" style="background:purple;padding:5px;margin-bottom:5px;">+ Lượt 5</button>
+                <button onclick="subDraws('${u}', 5)" style="background:indigo;padding:5px;margin-bottom:5px;">- Lượt 5</button><br>
+                
+                <button onclick="deleteUser('${u}')" style="background:red;padding:5px;width:100%;">Xóa User</button>
+            </td>
+        </tr>`;
+    }
+    html += "</table>";
+    document.getElementById('adminUserList').innerHTML = html;
+}
+
+function toggleApprove(u, status) {
+    userStats[u].approved = status;
+    localStorage.setItem("userStats", JSON.stringify(userStats));
+    renderAdminUserList();
+}
+
+function addDraws(u, type) {
+    let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
+    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ đi ytho ơi!");
+    
+    if(type === 3) userStats[u].draws3 += val;
+    if(type === 5) userStats[u].draws5 += val;
+    
+    localStorage.setItem("userStats", JSON.stringify(userStats));
+    renderAdminUserList();
+    alert(`Đã cộng ${val} lượt rút ${type} lá cho tài khoản ${u}!`);
+}
+
+// ✨ TÍNH NĂNG MỚI: TRỪ LƯỢT
+function subDraws(u, type) {
+    let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
+    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ đi ytho ơi!");
+    
+    if(type === 3) {
+        userStats[u].draws3 = Math.max(0, userStats[u].draws3 - val); // Không để lượt âm
+    }
+    if(type === 5) {
+        userStats[u].draws5 = Math.max(0, userStats[u].draws5 - val);
+    }
+    
+    localStorage.setItem("userStats", JSON.stringify(userStats));
+    renderAdminUserList();
+    alert(`Đã trừ ${val} lượt rút ${type} lá của tài khoản ${u}!`);
+}
+
+function deleteUser(u) {
+    if(confirm(`Xóa vĩnh viễn tài khoản ${u} hả ytho?`)){
+        delete users[u];
+        delete userStats[u];
+        delete histories[u];
+        delete profiles[u];
+        
+        localStorage.setItem("users", JSON.stringify(users));
+        localStorage.setItem("userStats", JSON.stringify(userStats));
+        localStorage.setItem("histories", JSON.stringify(histories));
+        localStorage.setItem("profiles", JSON.stringify(profiles));
+        
+        renderAdminUserList();
+    }
+}
+// ================= KẾT THÚC ADMIN =================
+
+
+function updateDrawsInfo() {
+    if(currentUser && currentUser !== "admin") {
+        let stats = userStats[currentUser];
+        let info = document.getElementById("drawsInfo");
+        if(!stats.approved) {
+            info.innerText = "Tài khoản chưa được ytho duyệt. Không thể rút bài!";
+            info.style.color = "red";
+        } else {
+            info.innerHTML = `Lượt rút 3 lá: <span style="color:#fff">${stats.draws3}</span> | Lượt rút 5 lá: <span style="color:#fff">${stats.draws5}</span>`;
+            info.style.color = "yellow";
+        }
+    }
 }
 
 function startDraw(){
 if(!nameInput.value.trim()) return alert("Nhập tên đii ng dpp");
+
+let num = parseInt(mode.value);
+let stats = userStats[currentUser];
+
+if(!stats.approved) {
+    return alert("Tài khoản của ng dp chưa được ytho duyệt để rút bài nha!");
+}
+
+if(num === 3) {
+    if(stats.draws3 <= 0) return alert("ng dp đã hết lượt rút 3 lá ròi! Hãy mua thêm lượt từ ytho nha.");
+    stats.draws3 -= 1;
+} else if (num === 5) {
+    if(stats.draws5 <= 0) return alert("ng dp đã hết lượt rút 5 lá ròi! Hãy mua thêm lượt từ ytho nha.");
+    stats.draws5 -= 1;
+}
+
+localStorage.setItem("userStats", JSON.stringify(userStats));
+updateDrawsInfo();
+
 show('focus');
 drawNow.style.display="none";
 let c=7;
@@ -291,7 +461,6 @@ drawNow.style.display="block";
 }
 
 function drawCards(){
-  // 👉 lưu thông tin user
 profiles[currentUser] = {
 name: nameInput.value,
 birth: birth.value
@@ -355,7 +524,6 @@ localStorage.setItem("histories",JSON.stringify(histories));
 showHistory();
 }
 
-// 🎵 NHẠC
 let music = new Audio("nhac.mp3");
 music.loop = true;
 
@@ -369,7 +537,6 @@ alert("🔇 tắt nhạc ròii");
 }
 }
 
-// ✨ THANH TẨY
 function purify(){
 if(!currentUser){
 alert("Đăng nhập mới thanh tẩy đc nhaaa");
@@ -388,10 +555,9 @@ container.appendChild(s);
 setTimeout(()=>s.remove(),2000);
 }
 
-alert("✨ Thanh tẩy năng lượng xong rùi 🔮");
+alert("✨ Thanh tẩy năng lượng xong ròi 🔮");
 }
 
-// BUTTONS
 let btn = document.createElement("button");
 btn.innerText="🎵 Nhạc chill";
 btn.style.position="fixed";
@@ -420,10 +586,8 @@ birth: birth.value
 };
 
 localStorage.setItem("profiles", JSON.stringify(profiles));
-alert("Lưu thông tin thành công rùi nhaa 💖");
+alert("Lưu thông tin thành công ròiii ạa 💖");
 }
-
-</script>
 
 </script>
 </body>
