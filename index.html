@@ -319,8 +319,17 @@ function renderAdminUserList() {
             <td>${s.draws3}|${s.draws5}</td>
             <td>
                 <button onclick="db.ref('userStats/${u}/approved').set(${!s.approved})" style="background:${s.approved?'orange':'green'}; padding:3px">Duyệt/Huỷ</button>
-                <button onclick="adjustDraw('${u}', 3, 1)" style="background:blue">+</button>
-                <button onclick="adjustDraw('${u}', 3, -1)" style="background:darkblue">-</button>
+               // Đoạn này giúp Admin cộng/trừ cả 2 loại lượt luôn:
+<div style="margin-top:5px">
+  <small>3 lá:</small>
+  <button onclick="adjustDraw('${u}', 3, 1)" style="background:blue; padding:2px 5px">+</button>
+  <button onclick="adjustDraw('${u}', 3, -1)" style="background:darkblue; padding:2px 5px">-</button>
+</div>
+<div style="margin-top:5px">
+  <small>5 lá:</small>
+  <button onclick="adjustDraw('${u}', 5, 1)" style="background:purple; padding:2px 5px">+</button>
+  <button onclick="adjustDraw('${u}', 5, -1)" style="background:indigo; padding:2px 5px">-</button>
+</div>
                 <button onclick="deleteUser('${u}')" style="background:red">Xoá</button>
             </td>
         </tr>`;
@@ -347,7 +356,7 @@ function deleteUser(u) {
 function updateDrawsInfo() {
     let s = userStats[currentUser] || {approved: false, draws3:0, draws5:0};
     drawsInfo.innerHTML = s.approved ? 
-        `Số lượt còn lại: <span style="color:white">3 lá: ${s.draws3} | 5 lá: ${s.draws5}</span>` : 
+        `Số lượt còn lại làaa: <span style="color:white">3 lá: ${s.draws3} | 5 lá: ${s.draws5}</span>` : 
         `<span style="color:red">Tài khoản chưa được ytho duyệt!</span>`;
 }
 
