@@ -2,7 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Tarot Web - LamTho</title>
+<title>Tarot Web - LamTho (Admin Edition)</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 body{
@@ -10,8 +13,10 @@ body{
   background:linear-gradient(135deg,#ffb6c1,#ffc0cb);
   text-align:center;
   color:#fff;
+  margin: 0;
+  padding: 0;
 }
-.container{display:none;margin-top:40px;}
+.container{display:none;margin-top:40px; padding: 20px;}
 .active{display:block;}
 
 input,button,select{
@@ -19,18 +24,22 @@ input,button,select{
   margin:5px;
   border-radius:10px;
   border:none;
+  outline: none;
 }
 button{
   background:#ff69b4;
   color:white;
   cursor:pointer;
+  font-weight: bold;
 }
+button:hover{ background: #ff1493; }
 
 .logout{
   position:absolute;
   right:10px;
   top:10px;
   background:red;
+  z-index: 100;
 }
 
 .card{
@@ -58,6 +67,7 @@ button{
   height:100%;
   backface-visibility:hidden;
   border-radius:10px;
+  border: 2px solid gold;
 }
 
 .card-front{
@@ -72,28 +82,28 @@ button{
   align-items:center;
   justify-content:center;
   font-weight:bold;
+  font-size: 14px;
 }
 
 img{
   width:100%;
-  border-radius:10px;
+  height: 80%;
+  object-fit: cover;
+  border-radius:10px 10px 0 0;
 }
 
 /* ✨ hiệu ứng thanh tẩy */
 #purifyEffect{
   position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+  top:0; left:0;
+  width:100%; height:100%;
   pointer-events:none;
   overflow:hidden;
   z-index:9999;
 }
 .sparkle{
   position:absolute;
-  width:8px;
-  height:8px;
+  width:8px; height:8px;
   background:white;
   border-radius:50%;
   animation:fly 2s linear forwards;
@@ -108,13 +118,15 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.4);
   border-radius: 10px;
+  font-size: 13px;
 }
 th, td {
-  padding: 10px;
-  border: 1px solid #fff;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
 }
+th { background: #ff69b4; }
 </style>
 </head>
 
@@ -142,16 +154,18 @@ th, td {
 
 <div id="adminPanel" class="container">
 <h2>Trang Quản Trị Admin</h2>
-<p>Tổng số tài khoản đã tạo: <b id="totalUsersCount">0</b></p>
+<p>Tổng số tài khoản: <b id="totalUsersCount">0</b></p>
 <div id="adminUserList" style="overflow-x:auto;"></div>
+<button onclick="logout()" style="margin-top: 20px; background: gray;">Thoát Admin</button>
 </div>
 
 <div id="main" class="container">
 <h2>Rút bài Tarot xíu đi nèe</h2>
-<p id="drawsInfo" style="color: yellow; font-weight: bold;"></p>
+<p id="drawsInfo"></p>
 <input id="nameInput" placeholder="Nhập tên đi ng dpp"><br>
-<input id="nameInput" placeholder="Nhập ngày/tháng/năm sinh đi ng dpp"><br>
+<input id="birthInput" placeholder="Nhập ngày/tháng/năm sinh"><br>
 <button onclick="saveProfile()">Lưu thông tin nhaa</button>
+<br>
 <select id="mode">
 <option value="3">Rút 3 láaa</option>
 <option value="5" selected>Rút 5 láaa</option>
@@ -174,389 +188,249 @@ th, td {
 <h2 id="resultTitle"></h2>
 <div id="cards"></div>
 <p id="message"></p>
-
-
-<button style="margin-top:70px;" onclick="show('main')">Trangg chủ</button>
+<button style="margin-top:30px;" onclick="show('main')">Trangg chủ</button>
 </div>
 
 <div id="history" class="container">
 <h2>Lịch sử xem tarot</h2>
 <div id="historyList"></div>
-<button onclick="deleteSelected()">🗑 Xóa ls đã chọnn</button>
-<button onclick="deleteAllHistory()">💥 Xóa toàn bộ ls xem tarot</button>
+<button onclick="deleteSelected()">🗑 Xóa mục đã chọn</button>
+<button onclick="deleteAllHistory()">💥 Xóa hết lịch sử</button>
 <button onclick="show('main')">Quay lạiii</button>
 </div>
 
 <script>
-function deleteAllHistory(){
-  if(!confirm("Xóa hết lịch sử luôn hả? 😢")) return;
-  histories[currentUser] = [];
-  localStorage.setItem("histories", JSON.stringify(histories));
-  showHistory();
-}
+// --- CẤU HÌNH FIREBASE CỦA YTHO ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDePdsAPTz6-6nJ_OopQT8QB71Iba4-Uuk",
+  authDomain: "ythoadmin.firebaseapp.com",
+  projectId: "ythoadmin",
+  storageBucket: "ythoadmin.firebasestorage.app",
+  messagingSenderId: "782862967723",
+  appId: "1:782862967723:web:46224304652dcb43dfe8ee",
+  databaseURL: "https://ythoadmin-default-rtdb.firebaseio.com" // Đã khớp với Project ID của bạn
+};
 
-let users = JSON.parse(localStorage.getItem("users")) || {};
-let histories = JSON.parse(localStorage.getItem("histories")) || {};
-let profiles = JSON.parse(localStorage.getItem("profiles")) || {};
-let userStats = JSON.parse(localStorage.getItem("userStats")) || {}; 
+// Khởi tạo
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let users = {}, histories = {}, profiles = {}, userStats = {};
 let currentUser = "";
 let timer;
 
-for(let u in users) {
-    if(!userStats[u]) {
-        userStats[u] = { approved: false, draws3: 0, draws5: 0 };
-    } else {
-        if(userStats[u].draws3 === undefined) userStats[u].draws3 = 0;
-        if(userStats[u].draws5 === undefined) {
-            userStats[u].draws5 = userStats[u].drawsLeft || 0; 
-            delete userStats[u].drawsLeft;
-        }
-    }
-}
-localStorage.setItem("userStats", JSON.stringify(userStats));
+// Lắng nghe dữ liệu Real-time từ mây
+db.ref('/').on('value', (snapshot) => {
+    const data = snapshot.val() || {};
+    users = data.users || {};
+    histories = data.histories || {};
+    profiles = data.profiles || {};
+    userStats = data.userStats || {};
 
+    if(currentUser === "admin") renderAdminUserList();
+    if(currentUser && currentUser !== "admin") updateDrawsInfo();
+});
 
+// Danh sách bài Tarot
 let tarot = [
-{name:"The Fool",img:"m00.jpg"},
-{name:"The Magician",img:"m01.jpg"},
-{name:"The High Priestess",img:"m02.jpg"},
-{name:"The Empress",img:"m03.jpg"},
-{name:"The Emperor",img:"m04.jpg"},
-{name:"The Hierophant",img:"m05.jpg"},
-{name:"The Lovers",img:"m06.jpg"},
-{name:"The Chariot",img:"m07.jpg"},
-{name:"Strength",img:"m08.jpg"},
-{name:"The Hermit",img:"m09.jpg"},
-{name:"Wheel of Fortune",img:"m10.jpg"},
-{name:"Justice",img:"m11.jpg"},
-{name:"The Hanged Man",img:"m12.jpg"},
-{name:"Death",img:"m13.jpg"},
-{name:"Temperance",img:"m14.jpg"},
-{name:"The Devil",img:"m15.jpg"},
-{name:"The Tower",img:"m16.jpg"},
-{name:"The Star",img:"m17.jpg"},
-{name:"The Moon",img:"m18.jpg"},
-{name:"The Sun",img:"m19.jpg"},
-{name:"Judgement",img:"m20.jpg"},
-{name:"The World",img:"m21.jpg"},
+    {name:"The Fool",img:"m00.jpg"}, {name:"The Magician",img:"m01.jpg"},
+    {name:"The High Priestess",img:"m02.jpg"}, {name:"The Empress",img:"m03.jpg"},
+    {name:"The Emperor",img:"m04.jpg"}, {name:"The Hierophant",img:"m05.jpg"},
+    {name:"The Lovers",img:"m06.jpg"}, {name:"The Chariot",img:"m07.jpg"},
+    {name:"Strength",img:"m08.jpg"}, {name:"The Hermit",img:"m09.jpg"},
+    {name:"Wheel of Fortune",img:"m10.jpg"}, {name:"Justice",img:"m11.jpg"},
+    {name:"The Hanged Man",img:"m12.jpg"}, {name:"Death",img:"m13.jpg"},
+    {name:"Temperance",img:"m14.jpg"}, {name:"The Devil",img:"m15.jpg"},
+    {name:"The Tower",img:"m16.jpg"}, {name:"The Star",img:"m17.jpg"},
+    {name:"The Moon",img:"m18.jpg"}, {name:"The Sun",img:"m19.jpg"},
+    {name:"Judgement",img:"m20.jpg"}, {name:"The World",img:"m21.jpg"}
 ];
-
 const suits = ["Cups","Pentacles","Swords","Wands"];
 const ranks = ["Ace","2","3","4","5","6","7","8","9","10","Page","Knight","Queen","King"];
-
-suits.forEach(s=>{
-ranks.forEach(r=>{
-tarot.push({name:`${r} of ${s}`,img:"anphuu.PNG"});
-});
-});
+suits.forEach(s => ranks.forEach(r => tarot.push({name:`${r} of ${s}`, img:"anphuu.PNG"})));
 
 function show(id){
-document.querySelectorAll('.container').forEach(e=>e.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-
-if(id !== 'login' && id !== 'register') {
-    document.getElementById('logoutBtn').style.display = 'block';
-} else {
-    document.getElementById('logoutBtn').style.display = 'none';
-}
-
-if(id === 'main') {
-    updateDrawsInfo();
-}
+    document.querySelectorAll('.container').forEach(e=>e.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('logoutBtn').style.display = (id === 'login' || id === 'register' || id === 'adminPanel') ? 'none' : 'block';
 }
 
 function register(){
-let u = regUser.value.trim();
-let p = regPass.value.trim();
+    let u = regUser.value.trim();
+    let p = regPass.value.trim();
+    if(!u || !p) return alert("Nhập đủ thông tin đii");
+    if(u === "ytho1302") return alert("Tên này của Admin mà!");
+    if(users[u]) return alert("Tài khoản này có ng dùng rùi");
 
-if(!u) return alert("Nhập tên đăng nhập đii");
-if(!p) return alert("Nhập mật khẩu đii ng dpp");
-if(u === "ytho1302") return alert("Tên này dành riêng cho Admin!");
-if(users[u]) return alert("Tài khoản đã tồn tại ròiii");
-
-users[u] = p; // Lưu mật khẩu thực tế
-userStats[u] = { approved: false, draws3: 0, draws5: 0 }; 
-
-localStorage.setItem("users",JSON.stringify(users));
-localStorage.setItem("userStats",JSON.stringify(userStats));
-
-alert("Tạo tài khoản thành công rùi nhaaa! Nhớ mật khẩu đó.");
-show('login');
+    db.ref(`users/${u}`).set(p);
+    db.ref(`userStats/${u}`).set({ approved: false, draws3: 0, draws5: 0 });
+    alert("Đăng ký xong rùi! Đợi ytho duyệt mới được rút bài nha.");
+    show('login');
 }
 
 function login(){
-let u=loginUser.value.trim();
-let p=loginPass.value;
+    let u = loginUser.value.trim();
+    let p = loginPass.value;
 
-// TÀI KHOẢN ADMIN
-if(u === "ytho1302" && p === "217465adminytho"){
-    currentUser = "admin";
-    showAdmin();
-    return;
-}
-
-// Check mật khẩu người dùng đã lưu
-if(users[u] && p === users[u]){
-    currentUser=u;
-    if(profiles[currentUser]){
-        nameInput.value = profiles[currentUser].name || "";
-        birth.value = profiles[currentUser].birth || "";
-    }else{
-        nameInput.value = "";
-        birth.value = "";
+    if(u === "ytho1302" && p === "217465adminytho"){
+        currentUser = "admin";
+        show('adminPanel');
+        return;
     }
-    show('main');
-}else {
-    alert("Sai mật khẩu hoặc tài khoản ròiii ng dp");
-}
+
+    if(users[u] && users[u] === p){
+        currentUser = u;
+        nameInput.value = (profiles[u] && profiles[u].name) ? profiles[u].name : "";
+        birthInput.value = (profiles[u] && profiles[u].birth) ? profiles[u].birth : "";
+        show('main');
+    } else {
+        alert("Sai tài khoản hoặc mật khẩu ròii");
+    }
 }
 
 function logout(){
-currentUser="";
-loginUser.value = "";
-loginPass.value = "";
-show('login');
+    currentUser = "";
+    loginUser.value = ""; loginPass.value = "";
+    show('login');
 }
 
-// ================= PHẦN ADMIN =================
-function showAdmin(){
-    show('adminPanel');
-    renderAdminUserList();
-}
-
+// --- ADMIN LOGIC ---
 function renderAdminUserList() {
-    let count = Object.keys(users).length;
-    document.getElementById('totalUsersCount').innerText = count;
-
-    let html = "<table><tr><th>Tài khoản</th><th>Mật khẩu</th><th>Trạng thái</th><th>Lượt 3</th><th>Lượt 5</th><th>Hành động</th></tr>";
-    for(let u in users) {
-        let stats = userStats[u];
-        let statusTxt = stats.approved ? "<span style='color:lightgreen'>Đã duyệt</span>" : "<span style='color:yellow'>Chưa duyệt</span>";
-        
+    let keys = Object.keys(users);
+    document.getElementById('totalUsersCount').innerText = keys.length;
+    let html = `<table><tr><th>User</th><th>Pass</th><th>Duyệt</th><th>Lượt 3|5</th><th>Lệnh</th></tr>`;
+    keys.forEach(u => {
+        let s = userStats[u] || {approved: false, draws3:0, draws5:0};
         html += `<tr>
             <td>${u}</td>
-            <td style="color: #00ffff; font-weight: bold;">${users[u]}</td>
-            <td>${statusTxt}</td>
-            <td><b>${stats.draws3}</b></td>
-            <td><b>${stats.draws5}</b></td>
-            <td style="text-align:left;">
-                ${!stats.approved ? `<button onclick="toggleApprove('${u}', true)" style="background:green;padding:5px;margin-bottom:5px;width:100%;">Duyệt</button>` : `<button onclick="toggleApprove('${u}', false)" style="background:orange;padding:5px;margin-bottom:5px;width:100%;">Hủy Duyệt</button>`}<br>
-                
-                <input type="number" id="draw3_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
-                <button onclick="addDraws('${u}', 3)" style="background:blue;padding:5px;margin-bottom:5px;">+</button>
-                <button onclick="subDraws('${u}', 3)" style="background:darkblue;padding:5px;margin-bottom:5px;">-</button><br>
-                
-                <input type="number" id="draw5_${u}" style="width:40px; padding:5px; margin:0;" placeholder="+/-">
-                <button onclick="addDraws('${u}', 5)" style="background:purple;padding:5px;margin-bottom:5px;">+</button>
-                <button onclick="subDraws('${u}', 5)" style="background:indigo;padding:5px;margin-bottom:5px;">-</button><br>
-                
-                <button onclick="deleteUser('${u}')" style="background:red;padding:5px;width:100%;">Xóa</button>
+            <td style="color:cyan">${users[u]}</td>
+            <td>${s.approved ? '✅' : '❌'}</td>
+            <td>${s.draws3}|${s.draws5}</td>
+            <td>
+                <button onclick="db.ref('userStats/${u}/approved').set(${!s.approved})" style="background:${s.approved?'orange':'green'}; padding:3px">Duyệt/Huỷ</button>
+                <button onclick="adjustDraw('${u}', 3, 1)" style="background:blue">+</button>
+                <button onclick="adjustDraw('${u}', 3, -1)" style="background:darkblue">-</button>
+                <button onclick="deleteUser('${u}')" style="background:red">Xoá</button>
             </td>
         </tr>`;
-    }
-    html += "</table>";
-    document.getElementById('adminUserList').innerHTML = html;
+    });
+    html += `</table>`;
+    adminUserList.innerHTML = html;
 }
 
-function toggleApprove(u, status) {
-    userStats[u].approved = status;
-    localStorage.setItem("userStats", JSON.stringify(userStats));
-    renderAdminUserList();
-}
-
-function addDraws(u, type) {
-    let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
-    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ!");
-    
-    if(type === 3) userStats[u].draws3 += val;
-    if(type === 5) userStats[u].draws5 += val;
-    
-    localStorage.setItem("userStats", JSON.stringify(userStats));
-    renderAdminUserList();
-}
-
-function subDraws(u, type) {
-    let val = parseInt(document.getElementById(`draw${type}_${u}`).value);
-    if(isNaN(val) || val <= 0) return alert("Nhập số lượt hợp lệ!");
-    
-    if(type === 3) userStats[u].draws3 = Math.max(0, userStats[u].draws3 - val);
-    if(type === 5) userStats[u].draws5 = Math.max(0, userStats[u].draws5 - val);
-    
-    localStorage.setItem("userStats", JSON.stringify(userStats));
-    renderAdminUserList();
+function adjustDraw(u, type, amount) {
+    let current = (userStats[u] && userStats[u][`draws${type}`]) ? userStats[u][`draws${type}`] : 0;
+    db.ref(`userStats/${u}/draws${type}`).set(Math.max(0, current + amount));
 }
 
 function deleteUser(u) {
-    if(confirm(`Xóa vĩnh viễn tài khoản ${u} hả ytho?`)){
-        delete users[u];
-        delete userStats[u];
-        delete histories[u];
-        delete profiles[u];
-        
-        localStorage.setItem("users", JSON.stringify(users));
-        localStorage.setItem("userStats", JSON.stringify(userStats));
-        localStorage.setItem("histories", JSON.stringify(histories));
-        localStorage.setItem("profiles", JSON.stringify(profiles));
-        
-        renderAdminUserList();
+    if(confirm(`Xóa sạch dữ liệu của ${u}?`)) {
+        db.ref(`users/${u}`).remove();
+        db.ref(`userStats/${u}`).remove();
+        db.ref(`profiles/${u}`).remove();
+        db.ref(`histories/${u}`).remove();
     }
 }
-// ================= KẾT THÚC ADMIN =================
 
+// --- USER LOGIC ---
 function updateDrawsInfo() {
-    if(currentUser && currentUser !== "admin") {
-        let stats = userStats[currentUser];
-        let info = document.getElementById("drawsInfo");
-        if(!stats.approved) {
-            info.innerText = "Tài khoản chưa được ytho duyệt. Không thể rút bài!";
-            info.style.color = "red";
-        } else {
-            info.innerHTML = `Lượt 3 lá: <span style="color:#fff">${stats.draws3}</span> | Lượt 5 lá: <span style="color:#fff">${stats.draws5}</span>`;
-            info.style.color = "yellow";
-        }
-    }
+    let s = userStats[currentUser] || {approved: false, draws3:0, draws5:0};
+    drawsInfo.innerHTML = s.approved ? 
+        `Số lượt còn lại: <span style="color:white">3 lá: ${s.draws3} | 5 lá: ${s.draws5}</span>` : 
+        `<span style="color:red">Tài khoản chưa được ytho duyệt!</span>`;
+}
+
+function saveProfile(){
+    if(!currentUser) return;
+    db.ref(`profiles/${currentUser}`).set({ name: nameInput.value, birth: birthInput.value });
+    alert("Đã lưu thông tin lên mây! ✨");
 }
 
 function startDraw(){
-if(!nameInput.value.trim()) return alert("Nhập tên đii ng dpp");
+    let num = parseInt(mode.value);
+    let s = userStats[currentUser] || {};
+    if(!s.approved) return alert("Chưa được duyệt sao rút bài được ng dp!");
+    if(num === 3 && s.draws3 <= 0) return alert("Hết lượt 3 lá rùi, xin ytho thêm đi!");
+    if(num === 5 && s.draws5 <= 0) return alert("Hết lượt 5 lá rùi, xin ytho thêm đi!");
 
-let num = parseInt(mode.value);
-let stats = userStats[currentUser];
-
-if(!stats.approved) {
-    return alert("Tài khoản của bạn chưa được ytho duyệt!");
+    db.ref(`userStats/${currentUser}/draws${num}`).set(s[`draws${num}`] - 1);
+    
+    show('focus');
+    drawNow.style.display="none";
+    let c = 7; count.innerText = c;
+    clearInterval(timer);
+    timer = setInterval(() => {
+        c--; count.innerText = c;
+        if(c <= 0) { clearInterval(timer); drawNow.style.display = "block"; }
+    }, 1000);
 }
 
-if(num === 3) {
-    if(stats.draws3 <= 0) return alert("ng dp đã hết lượt rút 3 lá ròi hãy mua thêm lượt từ ytho nhaaa!");
-    stats.draws3 -= 1;
-} else if (num === 5) {
-    if(stats.draws5 <= 0) return alert("ng dp đã hết lượt rút 5 lá ròi hãy mua thêm lượt từ ytho nhaaa!");
-    stats.draws5 -= 1;
-}
-
-localStorage.setItem("userStats", JSON.stringify(userStats));
-updateDrawsInfo();
-
-show('focus');
-drawNow.style.display="none";
-let c=7;
-count.innerText=c;
-clearInterval(timer);
-timer=setInterval(()=>{
-c--;
-count.innerText=c;
-if(c<=0){
-clearInterval(timer);
-drawNow.style.display="block";
-}
-},1000);
-}
-
-function skip(){
-clearInterval(timer);
-drawNow.style.display="block";
-}
+function skip(){ clearInterval(timer); drawNow.style.display="block"; }
 
 function drawCards(){
-profiles[currentUser] = {
-name: nameInput.value,
-birth: birth.value
-};
-localStorage.setItem("profiles", JSON.stringify(profiles));
-show('result');
-let num = parseInt(mode.value);
-resultTitle.innerText = `Kết quả (${num} lá)`;
-let shuffled=[...tarot].sort(()=>0.5-Math.random());
-let selected=shuffled.slice(0,num);
+    show('result');
+    let num = parseInt(mode.value);
+    resultTitle.innerText = `Kết quả của ${nameInput.value || 'bạn'} (${num} lá)`;
+    let shuffled = [...tarot].sort(() => 0.5 - Math.random());
+    let selected = shuffled.slice(0, num);
 
-let html="";
-selected.forEach(card=>{
-html+=`
-<div class="card" onclick="this.classList.toggle('flip')">
-<div class="card-inner">
-<div class="card-back">Tarot ytho</div>
-<div class="card-front">
-<img src="${card.img}">
-<p>${card.name}</p>
-</div>
-</div>
-</div>
-`;
-});
-cards.innerHTML=html;
+    let html = "";
+    selected.forEach(card => {
+        html += `<div class="card" onclick="this.classList.toggle('flip')">
+            <div class="card-inner">
+                <div class="card-back">Tarot ytho</div>
+                <div class="card-front"><img src="${card.img}"><p style="font-size:10px">${card.name}</p></div>
+            </div>
+        </div>`;
+    });
+    cards.innerHTML = html;
 
-if(!histories[currentUser]) histories[currentUser]=[];
-histories[currentUser].push({
-time:new Date().toLocaleString(),
-cards:selected.map(c=>c.name)
-});
-localStorage.setItem("histories",JSON.stringify(histories));
+    let userHis = histories[currentUser] || [];
+    userHis.push({ time: new Date().toLocaleString(), cards: selected.map(c => c.name) });
+    db.ref(`histories/${currentUser}`).set(userHis);
 }
 
 function showHistory(){
-show('history');
-let list=histories[currentUser]||[];
-let html="";
-list.forEach((i,index)=>{
-html+=`
-<p>
-<input type="checkbox" class="hisCheck" value="${index}">
-<b>${i.time}</b><br>${i.cards.join(", ")}
-</p><hr>
-`;
-});
-historyList.innerHTML=html || "Chưa có lịch sử xemm";
+    show('history');
+    let list = histories[currentUser] || [];
+    let html = "";
+    list.forEach((h, i) => {
+        if(h) html += `<p><input type="checkbox" class="hisCheck" value="${i}"> <b>${h.time}</b><br>${h.cards.join(", ")}</p><hr>`;
+    });
+    historyList.innerHTML = html || "Chưa có lần bói nào hết á.";
 }
 
 function deleteSelected(){
-let checks=document.querySelectorAll(".hisCheck:checked");
-let list=histories[currentUser]||[];
-checks.forEach(c=>{ list[c.value]=null; });
-histories[currentUser]=list.filter(x=>x!==null);
-localStorage.setItem("histories",JSON.stringify(histories));
-showHistory();
+    let list = histories[currentUser] || [];
+    document.querySelectorAll(".hisCheck:checked").forEach(c => list[c.value] = null);
+    db.ref(`histories/${currentUser}`).set(list.filter(x => x !== null));
 }
 
-let music = new Audio("nhac.mp3");
-music.loop = true;
-function toggleMusic(){
-if(music.paused){ music.play(); alert("🎵 mở nhạc ròiii"); }
-else{ music.pause(); alert("🔇 tắt nhạc ròii"); }
+function deleteAllHistory(){
+    if(confirm("Xóa sạch sành sanh luôn hả?")) db.ref(`histories/${currentUser}`).remove();
 }
 
+// Nhạc & Thanh tẩy
+let music = new Audio("nhac.mp3"); music.loop = true;
+function toggleMusic(){ music.paused ? music.play() : music.pause(); }
 function purify(){
-if(!currentUser) return alert("Đăng nhập mới thanh tẩy đc nhaaa");
-let container = document.getElementById("purifyEffect");
-for(let i=0;i<50;i++){
-let s=document.createElement("div");
-s.className="sparkle";
-s.style.left=Math.random()*100+"%";
-s.style.top=Math.random()*100+"%";
-container.appendChild(s);
-setTimeout(()=>s.remove(),2000);
-}
-alert("✨ Thanh tẩy xong rùi 🔮");
+    let container = document.getElementById("purifyEffect");
+    for(let i=0; i<50; i++){
+        let s = document.createElement("div"); s.className = "sparkle";
+        s.style.left = Math.random()*100+"%"; s.style.top = Math.random()*100+"%";
+        container.appendChild(s); setTimeout(() => s.remove(), 2000);
+    }
+    alert("✨ Đã thanh tẩy năng lượng tiêu cực! 🔮");
 }
 
-let btn = document.createElement("button");
-btn.innerText="🎵 Nhạc chill";
-btn.style.position="fixed"; btn.style.bottom="10px"; btn.style.right="10px";
-btn.onclick=toggleMusic;
-document.body.appendChild(btn);
-
-let btn2 = document.createElement("button");
-btn2.innerText="🌙 Thanh tẩy";
-btn2.style.position="fixed"; btn2.style.bottom="50px"; btn2.style.right="10px";
-btn2.onclick=purify;
-document.body.appendChild(btn2);
-
-function saveProfile(){
-if(!currentUser) return alert("Đăng nhập đi ng dpp");
-profiles[currentUser] = { name: nameInput.value, birth: birth.value };
-localStorage.setItem("profiles", JSON.stringify(profiles));
-alert("Lưu thông tin thành công ròi ạaa 💖");
+// Floating Buttons
+function createBtn(txt, bottom, func) {
+    let b = document.createElement("button"); b.innerText = txt;
+    b.style = `position:fixed; bottom:${bottom}px; right:10px; z-index:1000; font-size:12px; opacity:0.8`;
+    b.onclick = func; document.body.appendChild(b);
 }
+createBtn("🎵 Nhạc", 10, toggleMusic);
+createBtn("🌙 Thanh tẩy", 50, purify);
 
 </script>
 </body>
