@@ -233,17 +233,28 @@ db.ref('/').on('value', (snapshot) => {
 
 // Danh sách bài Tarot
 let tarot = [
-    {name:"The Fool",img:"m00.jpg"}, {name:"The Magician",img:"m01.jpg"},
-    {name:"The High Priestess",img:"m02.jpg"}, {name:"The Empress",img:"m03.jpg"},
-    {name:"The Emperor",img:"m04.jpg"}, {name:"The Hierophant",img:"m05.jpg"},
-    {name:"The Lovers",img:"m06.jpg"}, {name:"The Chariot",img:"m07.jpg"},
-    {name:"Strength",img:"m08.jpg"}, {name:"The Hermit",img:"m09.jpg"},
-    {name:"Wheel of Fortune",img:"m10.jpg"}, {name:"Justice",img:"m11.jpg"},
-    {name:"The Hanged Man",img:"m12.jpg"}, {name:"Death",img:"m13.jpg"},
-    {name:"Temperance",img:"m14.jpg"}, {name:"The Devil",img:"m15.jpg"},
-    {name:"The Tower",img:"m16.jpg"}, {name:"The Star",img:"m17.jpg"},
-    {name:"The Moon",img:"m18.jpg"}, {name:"The Sun",img:"m19.jpg"},
-    {name:"Judgement",img:"m20.jpg"}, {name:"The World",img:"m21.jpg"}
+    {name:"The Fool",img:"m00.jpg"}, 
+    {name:"The Magician",img:"m01.jpg"},
+    {name:"The High Priestess",img:"m02.jpg"}, 
+    {name:"The Empress",img:"m03.jpg"},
+    {name:"The Emperor",img:"m04.jpg"},
+     {name:"The Hierophant",img:"m05.jpg"},
+    {name:"The Lovers",img:"m06.jpg"},
+     {name:"The Chariot",img:"m07.jpg"},
+    {name:"Strength",img:"m08.jpg"},
+     {name:"The Hermit",img:"m09.jpg"},
+    {name:"Wheel of Fortune",img:"m10.jpg"}, 
+    {name:"Justice",img:"m11.jpg"},
+    {name:"The Hanged Man",img:"m12.jpg"},
+     {name:"Death",img:"m13.jpg"},
+    {name:"Temperance",img:"m14.jpg"},
+     {name:"The Devil",img:"m15.jpg"},
+    {name:"The Tower",img:"m16.jpg"}, 
+    {name:"The Star",img:"m17.jpg"},
+    {name:"The Moon",img:"m18.jpg"},
+     {name:"The Sun",img:"m19.jpg"},
+    {name:"Judgement",img:"m20.jpg"}, 
+    {name:"The World",img:"m21.jpg"}
 ];
 const suits = ["Cups","Pentacles","Swords","Wands"];
 const ranks = ["Ace","2","3","4","5","6","7","8","9","10","Page","Knight","Queen","King"];
@@ -349,9 +360,9 @@ function saveProfile(){
 function startDraw(){
     let num = parseInt(mode.value);
     let s = userStats[currentUser] || {};
-    if(!s.approved) return alert("Chưa được duyệt sao rút bài được ng dp!");
-    if(num === 3 && s.draws3 <= 0) return alert("Hết lượt 3 lá rùi, xin ytho thêm đi!");
-    if(num === 5 && s.draws5 <= 0) return alert("Hết lượt 5 lá rùi, xin ytho thêm đi!");
+    if(!s.approved) return alert(" được duyệt mới rút bài được nhaa ng dp!");
+    if(num === 3 && s.draws3 <= 0) return alert("Hết lượt 3 lá rùi, ib ytho để mua thêm lượt nhaa!");
+    if(num === 5 && s.draws5 <= 0) return alert("Hết lượt 5 lá rùi, ib ytho để mua thêm lượt nhaa!");
 
     db.ref(`userStats/${currentUser}/draws${num}`).set(s[`draws${num}`] - 1);
     
@@ -397,7 +408,7 @@ function showHistory(){
     list.forEach((h, i) => {
         if(h) html += `<p><input type="checkbox" class="hisCheck" value="${i}"> <b>${h.time}</b><br>${h.cards.join(", ")}</p><hr>`;
     });
-    historyList.innerHTML = html || "Chưa có lần bói nào hết á.";
+    historyList.innerHTML = html || "Chưa có lần xem nào hết á.";
 }
 
 function deleteSelected(){
