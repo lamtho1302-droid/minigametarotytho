@@ -88,7 +88,6 @@ button:hover{ background: #ff1493; }
 img{
   width:100%;
   height: 80%;
-  /* Đã sửa cover thành contain để ảnh không bị cắt lẹm mất góc */
   object-fit: contain; 
   border-radius:10px 10px 0 0;
 }
@@ -209,7 +208,7 @@ const firebaseConfig = {
   storageBucket: "ythoadmin.firebasestorage.app",
   messagingSenderId: "782862967723",
   appId: "1:782862967723:web:46224304652dcb43dfe8ee",
-  databaseURL: "https://ythoadmin-default-rtdb.firebaseio.com" // Đã khớp với Project ID của bạn
+  databaseURL: "https://ythoadmin-default-rtdb.firebaseio.com" 
 };
 
 // Khởi tạo
@@ -320,7 +319,7 @@ function renderAdminUserList() {
             <td>${s.draws3}|${s.draws5}</td>
             <td>
                 <button onclick="db.ref('userStats/${u}/approved').set(${!s.approved})" style="background:${s.approved?'orange':'green'}; padding:3px">Duyệt/Huỷ</button>
-               <div style="margin-top:5px">
+<div style="margin-top:5px">
   <small>3 lá:</small>
   <input type="number" id="val3_${u}" value="1" min="1" style="width:40px; padding:2px; margin:0; color:black;">
   <button onclick="adjustDrawInput('${u}', 3, 1)" style="background:blue; padding:2px 5px">+</button>
@@ -340,7 +339,6 @@ function renderAdminUserList() {
     adminUserList.innerHTML = html;
 }
 
-// Hàm mới để lấy giá trị từ ô input cho việc cộng trừ lượt
 function adjustDrawInput(u, type, sign) {
     let val = parseInt(document.getElementById(`val${type}_${u}`).value) || 1;
     adjustDraw(u, type, val * sign);
@@ -422,20 +420,42 @@ function showHistory(){
     show('history');
     let list = histories[currentUser] || [];
     let html = "";
-    list.forEach((h, i) => {
-        if(h) html += `<p><input type="checkbox" class="hisCheck" value="${i}"> <b>${h.time}</b><br>${h.cards.join(", ")}</p><hr>`;
-    });
+    if(list.length > 0) {
+        list.forEach((h, i) => {
+            if(h) html += `<p><input type="checkbox" class="hisCheck" value="${i}"> <b>${h.time}</b><br>${h.cards.join(", ")}</p><hr>`;
+        });
+    }
     historyList.innerHTML = html || "Chưa có lần xem nào hết á.";
 }
 
+// ✨ UPDATE MỚI: Sửa lỗi xóa 1 cái mất hết, và tự làm mới UI ngay lập tức
 function deleteSelected(){
     let list = histories[currentUser] || [];
-    document.querySelectorAll(".hisCheck:checked").forEach(c => list[c.value] = null);
-    db.ref(`histories/${currentUser}`).set(list.filter(x => x !== null));
+    let checkedNodes = document.querySelectorAll(".hisCheck:checked");
+    
+    if(checkedNodes.length === 0) return alert("Chưa chọn mục nào để xóa á!");
+    
+    // Lấy danh sách các số thứ tự (index) cần xóa
+    let indicesToDelete = Array.from(checkedNodes).map(c => parseInt(c.value));
+    
+    // Tạo danh sách mới: Lọc bỏ những mục có số thứ tự trùng với danh sách cần xóa
+    let newList = list.filter((_, index) => !indicesToDelete.includes(index));
+    
+    // Cập nhật lên mây, xong là gọi showHistory() để vẽ lại ngay luôn
+    db.ref(`histories/${currentUser}`).set(newList).then(() => {
+        histories[currentUser] = newList; // cập nhật biến ảo để xài liền
+        showHistory(); 
+    });
 }
 
 function deleteAllHistory(){
-    if(confirm("Xóa sạch sành sanh luôn hả?")) db.ref(`histories/${currentUser}`).remove();
+    if(confirm("Xóa sạch sành sanh luôn hả?")) {
+        // Xóa trên mây xong gọi showHistory() lại liền
+        db.ref(`histories/${currentUser}`).remove().then(() => {
+            histories[currentUser] = []; // cập nhật biến ảo về rỗng
+            showHistory(); 
+        });
+    }
 }
 
 // Nhạc & Thanh tẩy
@@ -457,7 +477,7 @@ function createBtn(txt, bottom, func) {
     b.style = `position:fixed; bottom:${bottom}px; right:10px; z-index:1000; font-size:12px; opacity:0.8`;
     b.onclick = func; document.body.appendChild(b);
 }
-createBtn("🎵 Nhạc(thiếu niên hoa hồng)", 10, toggleMusic);
+createBtn("🎵 Nhạc =)))", 10, toggleMusic);
 createBtn("🌙 Thanh tẩy", 50, purify);
 
 </script>
