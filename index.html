@@ -142,6 +142,9 @@ th { background: #ff69b4; }
 <input id="loginPass" type="password" placeholder="Mật khẩuu"><br>
 <button onclick="login()">Đăng nhậpp</button>
 <button onclick="show('register')">Đăngg ký</button>
+<br><br>
+<button onclick="toggleMusic()">🎵 Nhạc =)))</button>
+<button onclick="purify()">🌙 Thanh tẩy</button>
 </div>
 
 <div id="register" class="container">
@@ -150,6 +153,9 @@ th { background: #ff69b4; }
 <input id="regPass" type="password" placeholder="Mật khẩu của ng dp"><br>
 <button onclick="register()">Tạo tài khoảnn</button>
 <button onclick="show('login')">Quay lại đăng nhập</button>
+<br><br>
+<button onclick="toggleMusic()">🎵 Nhạc =)))</button>
+<button onclick="purify()">🌙 Thanh tẩy</button>
 </div>
 
 <div id="adminPanel" class="container">
@@ -173,6 +179,9 @@ th { background: #ff69b4; }
 
 <button onclick="startDraw()">Rútt bàii</button>
 <button onclick="showHistory()">Lịch sử xem Tarot</button>
+<br><br>
+<button onclick="toggleMusic()">🎵 Nhạc =)))</button>
+<button onclick="purify()">🌙 Thanh tẩy</button>
 </div>
 
 <div id="focus" class="container">
@@ -461,7 +470,14 @@ function deleteAllHistory(){
 // Nhạc & Thanh tẩy
 let music = new Audio("nhac.mp3"); music.loop = true;
 function toggleMusic(){ music.paused ? music.play() : music.pause(); }
+
 function purify(){
+    // Kiểm tra đã đăng nhập chưa
+    if(!currentUser || currentUser === "") {
+        alert("Đăng nhập vào rùi mới xài được tính năng thanh tẩy nha ng dpp!");
+        return;
+    }
+
     let container = document.getElementById("purifyEffect");
     for(let i=0; i<50; i++){
         let s = document.createElement("div"); s.className = "sparkle";
@@ -470,15 +486,6 @@ function purify(){
     }
     alert("✨ Đã thanh tẩy năng lượng tiêu cực! 🔮");
 }
-
-// Floating Buttons
-function createBtn(txt, bottom, func) {
-    let b = document.createElement("button"); b.innerText = txt;
-    b.style = `position:fixed; bottom:${bottom}px; right:10px; z-index:1000; font-size:12px; opacity:0.8`;
-    b.onclick = func; document.body.appendChild(b);
-}
-createBtn("🎵 Nhạc =)))", 10, toggleMusic);
-createBtn("🌙 Thanh tẩy", 50, purify);
 
 </script>
 </body>
