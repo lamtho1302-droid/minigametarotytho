@@ -240,34 +240,96 @@ db.ref('/').on('value', (snapshot) => {
     if(currentUser && currentUser !== "admin") updateDrawsInfo();
 });
 
-// Danh sách bài Tarot
+// Danh sách toàn bộ 78 lá bài Tarot (Liệt kê rõ ràng để dễ thay ảnh)
 let tarot = [
-    {name:"The Fool",img:"m00.jpg"}, 
-    {name:"The Magician",img:"m01.jpg"},
-    {name:"The High Priestess",img:"m02.jpg"}, 
-    {name:"The Empress",img:"m03.jpg"},
-    {name:"The Emperor",img:"m04.jpg"},
-     {name:"The Hierophant",img:"m05.jpg"},
-    {name:"The Lovers",img:"m06.jpg"},
-     {name:"The Chariot",img:"m07.jpg"},
-    {name:"Strength",img:"m08.jpg"},
-     {name:"The Hermit",img:"m09.jpg"},
-    {name:"Wheel of Fortune",img:"m10.jpg"}, 
-    {name:"Justice",img:"m11.jpg"},
-    {name:"The Hanged Man",img:"m12.jpg"},
-     {name:"Death",img:"m13.jpg"},
-    {name:"Temperance",img:"m14.jpg"},
-     {name:"The Devil",img:"m15.jpg"},
-    {name:"The Tower",img:"m16.jpg"}, 
-    {name:"The Star",img:"m17.jpg"},
-    {name:"The Moon",img:"m18.jpg"},
-     {name:"The Sun",img:"m19.jpg"},
-    {name:"Judgement",img:"m20.jpg"}, 
-    {name:"The World",img:"m21.jpg"}
+    // --- 22 LÁ ẨN CHÍNH (MAJOR ARCANA) ---
+    {name:"KẺ KHỜ", img:"m00.jpg"}, 
+    {name:"PHÁP SƯ", img:"m01.jpg"},
+    {name:"NỮ TƯ TẾ", img:"m02.jpg"}, 
+    {name:"HOÀNG HẬU", img:"m03.jpg"},
+    {name:"HOÀNG ĐẾ", img:"m04.jpg"},
+    {name:"GIÁO HOÀNG ", img:"m05.jpg"},
+    {name:"NHỮNG NGƯỜI YÊU NHAU", img:"m06.jpg"},
+    {name:"CỖ XE", img:"m07.jpg"},
+    {name:"SỨC MẠNH", img:"m08.jpg"},
+    {name:"ẨN SĨ", img:"m09.jpg"},
+    {name:"BÁNH XE SỐ PHẬN", img:"m10.jpg"}, 
+    {name:"CÔNG LÝ", img:"m11.jpg"},
+    {name:"NGƯỜI TREO NGƯỢC", img:"m12.jpg"},
+    {name:"CÁI CHẾT", img:"m13.jpg"},
+    {name:"TIẾT CHẾ", img:"m14.jpg"},
+    {name:"ÁC QUỶ", img:"m15.jpg"},
+    {name:"TÒA THÁP", img:"m16.jpg"}, 
+    {name:"NGÔI SAO", img:"m17.jpg"},
+    {name:"MẶT TRĂNG", img:"m18.jpg"},
+    {name:"MẶT TRỜI", img:"m19.jpg"},
+    {name:"PHÁN XÉT", img:"m20.jpg"}, 
+    {name:"THẾ GIỚI", img:"m21.jpg"},
+
+    // --- BỘ CỐC (CUPS) ---
+    {name:"Ace of Cups", img:"c01.jpg"},
+    {name:"2 of Cups", img:"c02.jpg"},
+    {name:"3 of Cups", img:"c03.jpg"},
+    {name:"4 of Cups", img:"c04.jpg"},
+    {name:"5 of Cups", img:"c05.jpg"},
+    {name:"6 of Cups", img:"c06.jpg"},
+    {name:"7 of Cups", img:"c07.jpg"},
+    {name:"8 of Cups", img:"c08.jpg"},
+    {name:"9 of Cups", img:"c09.jpg"},
+    {name:"10 of Cups", img:"c10.jpg"},
+    {name:"TIỂU ĐỒNG CỐC", img:"c11.jpg"},
+    {name:"KỴ SĨ CỐC", img:"c12.jpg"},
+    {name:"NỮ HOÀNG CỐC", img:"c13.jpg"},
+    {name:"VUA CỐC", img:"c14.jpg"},
+
+    // --- BỘ TIỀN (PENTACLES) ---
+    {name:"Ace of Pentacles", img:"p01.jpg"},
+    {name:"2 of Pentacles", img:"p02.jpg"},
+    {name:"3 of Pentacles", img:"p03.jpg"},
+    {name:"4 of Pentacles", img:"p04.jpg"},
+    {name:"5 of Pentacles", img:"p05.jpg"},
+    {name:"6 of Pentacles", img:"p06.jpg"},
+    {name:"7 of Pentacles", img:"p07.jpg"},
+    {name:"8 of Pentacles", img:"p08.jpg"},
+    {name:"9 of Pentacles", img:"p09.jpg"},
+    {name:"10 of Pentacles", img:"p10.jpg"},
+    {name:"TIỂU ĐỒNG XU", img:"p11.jpg"},
+    {name:"KỴ SĨ XU", img:"p12.jpg"},
+    {name:"NỮ HOÀNG XU", img:"p13.jpg"},
+    {name:"VUA XU", img:"p14.jpg"},
+
+    // --- BỘ KIẾM (SWORDS) ---
+    {name:"Ace of Swords", img:"s01.jpg"},
+    {name:"2 of Swords", img:"s02.jpg"},
+    {name:"3 of Swords", img:"s03.jpg"},
+    {name:"4 of Swords", img:"s04.jpg"},
+    {name:"5 of Swords", img:"s05.jpg"},
+    {name:"6 of Swords", img:"s06.jpg"},
+    {name:"7 of Swords", img:"s07.jpg"},
+    {name:"8 of Swords", img:"s08.jpg"},
+    {name:"9 of Swords", img:"s09.jpg"},
+    {name:"10 of Swords", img:"s10.jpg"},
+    {name:"TIỂU ĐỒNG KIẾM", img:"s11.jpg"},
+    {name:"KỴ SĨ KIẾM", img:"s12.jpg"},
+    {name:"NỮ HOÀNG KIẾM", img:"s13.jpg"},
+    {name:"VUA KIẾM", img:"s14.jpg"},
+
+    // --- BỘ GẬY (WANDS) ---
+    {name:"Ace of Wands", img:"w01.jpg"},
+    {name:"2 of Wands", img:"w02.jpg"},
+    {name:"3 of Wands", img:"w03.jpg"},
+    {name:"4 of Wands", img:"w04.jpg"},
+    {name:"5 of Wands", img:"w05.jpg"},
+    {name:"6 of Wands", img:"w06.jpg"},
+    {name:"7 of Wands", img:"w07.jpg"},
+    {name:"8 of Wands", img:"w08.jpg"},
+    {name:"9 of Wands", img:"w09.jpg"},
+    {name:"10 of Wands", img:"w10.jpg"},
+    {name:"TIỂU ĐỒNG GẬY", img:"w11.jpg"},
+    {name:"KỴ SĨ GẬY", img:"w12.jpg"},
+    {name:"NỮ HOÀNG GẬY", img:"w13.jpg"},
+    {name:"VUA GẬY", img:"w14.jpg"}
 ];
-const suits = ["Cups","Pentacles","Swords","Wands"];
-const ranks = ["Ace","2","3","4","5","6","7","8","9","10","Page","Knight","Queen","King"];
-suits.forEach(s => ranks.forEach(r => tarot.push({name:`${r} of ${s}`, img:"anphuu.PNG"})));
 
 function show(id){
     document.querySelectorAll('.container').forEach(e=>e.classList.remove('active'));
