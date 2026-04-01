@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Tarot Web - LamTho (Admin Edition)</title>
+<title>Tarot Web - LamTho </title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -76,13 +76,19 @@ button:hover{ background: #ff1493; }
   transform:rotateY(180deg);
 }
 
+
 .card-back{
-  background:#ff69b4;
+  background-image: url('matsau.png'); /* Thay đổi thành ảnh của ng dp */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display:flex;
   align-items:center;
   justify-content:center;
   font-weight:bold;
   font-size: 14px;
+  color: white; /* Màu chữ trắng */
+  text-shadow: 1px 1px 3px black; /* Viền đen đổ bóng cho chữ luôn nổi trên mọi nền ảnh */
 }
 
 img{
@@ -475,7 +481,7 @@ function drawCards(){
     selected.forEach(card => {
         html += `<div class="card" onclick="this.classList.toggle('flip')">
             <div class="card-inner">
-                <div class="card-back">Tarot ytho</div>
+                <div class="card-back"></div>
                 <div class="card-front"><img src="${card.img}"><p style="font-size:10px">${card.name}</p></div>
             </div>
         </div>`;
