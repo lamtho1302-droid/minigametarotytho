@@ -470,6 +470,7 @@ function startDraw(){
 
 function skip(){ clearInterval(timer); drawNow.style.display="block"; }
 
+// ✨ ĐÃ CHỈNH SỬA: HÀM RÚT BÀI CÓ THÊM TỈ LỆ RA BÀI NGƯỢC
 function drawCards(){
     show('result');
     let num = parseInt(mode.value);
@@ -478,22 +479,40 @@ function drawCards(){
     let selected = shuffled.slice(0, num);
 
     let html = "";
+    let historyCards = []; // Mảng phụ để lưu tên bài vào lịch sử (kèm chữ ngược)
+
     selected.forEach(card => {
+        // Tạo tỉ lệ 30% ra bài ngược 
+        let isReversed = Math.random() < 0.1; 
+        
+        // Nếu ngược thì thêm chữ (Ngược), xuôi thì giữ nguyên
+        let finalCardName = isReversed ? card.name + " (Ngược)" : card.name;
+        
+        // Cú pháp CSS xoay hình 180 độ nếu là bài ngược
+        let imgStyle = isReversed ? 'style="transform: rotate(180deg);"' : '';
+
+        // Đẩy tên vào mảng lịch sử
+        historyCards.push(finalCardName);
+
         html += `<div class="card" onclick="this.classList.toggle('flip')">
             <div class="card-inner">
                 <div class="card-back"></div>
-                <div class="card-front"><img src="${card.img}"><p style="font-size:10px">${card.name}</p></div>
+                <div class="card-front">
+                    <img src="${card.img}" ${imgStyle}>
+                    <p style="font-size:10px">${finalCardName}</p>
+                </div>
             </div>
         </div>`;
     });
     cards.innerHTML = html;
 
     let userHis = histories[currentUser] || [];
-    userHis.push({ time: new Date().toLocaleString(), cards: selected.map(c => c.name) });
+    // Lưu thẳng mảng có chứa sẵn tên "(Ngược)" lên Firebase luôn nha
+    userHis.push({ time: new Date().toLocaleString(), cards: historyCards });
     db.ref(`histories/${currentUser}`).set(userHis);
 }
 
-// ✨ ĐÃ SỬA: CHẠY VÒNG LẶP NGƯỢC ĐỂ LỊCH SỬ MỚI LÊN ĐẦU
+// Chạy vòng lặp ngược để lịch sử mới lên đầu
 function showHistory(){
     show('history');
     let list = histories[currentUser] || [];
