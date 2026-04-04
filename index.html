@@ -246,10 +246,10 @@ db.ref('/').on('value', (snapshot) => {
     if(currentUser && currentUser !== "admin") updateDrawsInfo();
 });
 
-// Danh sách toàn bộ 78 lá bài Tarot 
+// Danh sách toàn bộ 78 lá bài Tarot (ĐÃ DỊCH FULL SANG TIẾNG VIỆT)
 let tarot = [
     // --- 22 LÁ ẨN CHÍNH (MAJOR ARCANA) ---
-  {name:"KẺ KHỜ", img:"m00.jpg"}, 
+    {name:"KẺ KHỜ", img:"m00.jpg"}, 
     {name:"PHÁP SƯ", img:"m01.jpg"},
     {name:"NỮ TƯ TẾ", img:"m02.jpg"}, 
     {name:"HOÀNG HẬU", img:"m03.jpg"},
@@ -346,9 +346,9 @@ function show(id){
 function register(){
     let u = regUser.value.trim();
     let p = regPass.value.trim();
-    if(!u || !p) return alert("Nhập đủ thông tin đii");
-    if(u === "ytho1302") return alert("Tên này của Admin mà!");
-    if(users[u]) return alert("Tài khoản này có ng dùng rùi");
+    if(!u || !p) return alert("Nhập đủ thông tin đii ng dp");
+    if(u === "ytho1302") return alert("Tên này của ytho mà!");
+    if(users[u]) return alert("Tài khoản này có ng dùng ròii");
 
     db.ref(`users/${u}`).set(p);
     db.ref(`userStats/${u}`).set({ approved: false, draws3: 0, draws5: 0 });
@@ -370,15 +370,20 @@ function login(){
         currentUser = u;
         nameInput.value = (profiles[u] && profiles[u].name) ? profiles[u].name : "";
         birthInput.value = (profiles[u] && profiles[u].birth) ? profiles[u].birth : "";
+        
+        // ✨ ĐÃ SỬA CHỖ NÀY: Gọi hiển thị lượt ngay khi vừa đăng nhập xong
+        updateDrawsInfo(); 
+        
         show('main');
     } else {
-        alert("Sai tài khoản hoặc mật khẩu ròii");
+        alert("Sai tài khoản hoặc mật khẩu ròii ng dp ơii");
     }
 }
 
 function logout(){
     currentUser = "";
     loginUser.value = ""; loginPass.value = "";
+    drawsInfo.innerHTML = ""; // Xóa dòng hiển thị lượt khi đăng xuất
     show('login');
 }
 
@@ -439,22 +444,22 @@ function deleteUser(u) {
 function updateDrawsInfo() {
     let s = userStats[currentUser] || {approved: false, draws3:0, draws5:0};
     drawsInfo.innerHTML = s.approved ? 
-        `Số lượt còn lại làaa: <span style="color:white">3 lá: ${s.draws3} | 5 lá: ${s.draws5}</span>` : 
-        `<span style="color:red">Tài khoản chưa được ytho duyệt!</span>`;
+        `Số lượt nàng có làaa: <span style="color:#6A0DAD">3 lá: ${s.draws3} | 5 lá: ${s.draws5}</span>` : 
+        `<span style="color:red">Tài khoản này chưa được ytho duyệt hãy ib cho ytho để được duyệt nhaa!</span>`;
 }
 
 function saveProfile(){
     if(!currentUser) return;
     db.ref(`profiles/${currentUser}`).set({ name: nameInput.value, birth: birthInput.value });
-    alert("Đã lưu thông tin lên mây! ✨");
+    alert("Đã lưu thông tin ròi ạa! ✨");
 }
 
 function startDraw(){
     let num = parseInt(mode.value);
     let s = userStats[currentUser] || {};
-    if(!s.approved) return alert(" được duyệt mới rút bài được nhaa ng dp!");
-    if(num === 3 && s.draws3 <= 0) return alert("Hết lượt 3 lá rùi, ib ytho để mua thêm lượt nhaa!");
-    if(num === 5 && s.draws5 <= 0) return alert("Hết lượt 5 lá rùi, ib ytho để mua thêm lượt nhaa!");
+    if(!s.approved) return alert(" được ytho duyệt mới rút bài được nhaa ng dp!");
+    if(num === 3 && s.draws3 <= 0) return alert("Hết lượt 3 lá ròi, ib ytho để mua thêm lượt nhaa!");
+    if(num === 5 && s.draws5 <= 0) return alert("Hết lượt 5 lá ròi, ib ytho để mua thêm lượt nhaa!");
 
     db.ref(`userStats/${currentUser}/draws${num}`).set(s[`draws${num}`] - 1);
     
@@ -470,19 +475,18 @@ function startDraw(){
 
 function skip(){ clearInterval(timer); drawNow.style.display="block"; }
 
-// ✨ ĐÃ CHỈNH SỬA: HÀM RÚT BÀI CÓ THÊM TỈ LỆ RA BÀI NGƯỢC
 function drawCards(){
     show('result');
     let num = parseInt(mode.value);
-    resultTitle.innerText = `Kết quả của ${nameInput.value || 'bạn'} (${num} lá)`;
+    resultTitle.innerText = `Kết quả của trải bài của ${nameInput.value || 'bạn'} (${num} lá)`;
     let shuffled = [...tarot].sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, num);
 
     let html = "";
-    let historyCards = []; // Mảng phụ để lưu tên bài vào lịch sử (kèm chữ ngược)
+    let historyCards = []; 
 
     selected.forEach(card => {
-        // Tạo tỉ lệ 30% ra bài ngược 
+        // Tỉ lệ 10% ra bài ngược
         let isReversed = Math.random() < 0.1; 
         
         // Nếu ngược thì thêm chữ (Ngược), xuôi thì giữ nguyên
@@ -507,7 +511,6 @@ function drawCards(){
     cards.innerHTML = html;
 
     let userHis = histories[currentUser] || [];
-    // Lưu thẳng mảng có chứa sẵn tên "(Ngược)" lên Firebase luôn nha
     userHis.push({ time: new Date().toLocaleString(), cards: historyCards });
     db.ref(`histories/${currentUser}`).set(userHis);
 }
@@ -518,39 +521,34 @@ function showHistory(){
     let list = histories[currentUser] || [];
     let html = "";
     if(list.length > 0) {
-        // Chạy từ cuối mảng (list.length - 1) lùi về 0
         for(let i = list.length - 1; i >= 0; i--) {
             let h = list[i];
             if(h) html += `<p><input type="checkbox" class="hisCheck" value="${i}"> <b>${h.time}</b><br>${h.cards.join(", ")}</p><hr>`;
         }
     }
-    historyList.innerHTML = html || "Chưa có lần xem nào hết á.";
+    historyList.innerHTML = html || "Chưa có lần xem nào hết áaa.";
 }
 
 function deleteSelected(){
     let list = histories[currentUser] || [];
     let checkedNodes = document.querySelectorAll(".hisCheck:checked");
     
-    if(checkedNodes.length === 0) return alert("Chưa chọn mục nào để xóa á!");
+    if(checkedNodes.length === 0) return alert("Chọn mục để xóa đi ng dpp!");
     
-    // Lấy danh sách các số thứ tự (index) cần xóa
     let indicesToDelete = Array.from(checkedNodes).map(c => parseInt(c.value));
     
-    // Tạo danh sách mới: Lọc bỏ những mục có số thứ tự trùng với danh sách cần xóa
     let newList = list.filter((_, index) => !indicesToDelete.includes(index));
     
-    // Cập nhật lên mây, xong là gọi showHistory() để vẽ lại ngay luôn
     db.ref(`histories/${currentUser}`).set(newList).then(() => {
-        histories[currentUser] = newList; // cập nhật biến ảo để xài liền
+        histories[currentUser] = newList; 
         showHistory(); 
     });
 }
 
 function deleteAllHistory(){
-    if(confirm("Xóa sạch sành sanh luôn hả?")) {
-        // Xóa trên mây xong gọi showHistory() lại liền
+    if(confirm("Xóa sạch sành sanh luôn hả ng dp?")) {
         db.ref(`histories/${currentUser}`).remove().then(() => {
-            histories[currentUser] = []; // cập nhật biến ảo về rỗng
+            histories[currentUser] = []; 
             showHistory(); 
         });
     }
@@ -561,7 +559,6 @@ let music = new Audio("nhac.mp3"); music.loop = true;
 function toggleMusic(){ music.paused ? music.play() : music.pause(); }
 
 function purify(){
-    // Kiểm tra đã đăng nhập chưa
     if(!currentUser || currentUser === "") {
         alert("Đăng nhập vào rùi mới xài được tính năng thanh tẩy nha ng dpp!");
         return;
